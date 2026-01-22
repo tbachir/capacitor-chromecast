@@ -635,7 +635,7 @@ public class ChromecastConnection {
         }
     }
 
-    abstract static class Listener implements CastStateListener, ChromecastSession.Listener {
+    abstract static class Listener implements SessionManagerListener, CastStateListener, ChromecastSession.Listener {
         abstract void onReceiverAvailableUpdate(boolean available);
         abstract void onSessionRejoin(JSONObject jsonSession);
 
@@ -643,6 +643,43 @@ public class ChromecastConnection {
         @Override
         public void onCastStateChanged(int state) {
             onReceiverAvailableUpdate(state != CastState.NO_DEVICES_AVAILABLE);
+        }
+
+        /** SessionManagerListener functions - to be overridden by implementers. */
+        @Override
+        public void onSessionStarted(com.google.android.gms.cast.framework.Session session, String sessionId) {
+        }
+
+        @Override
+        public void onSessionEnded(com.google.android.gms.cast.framework.Session session, int error) {
+        }
+
+        @Override
+        public void onSessionEnding(com.google.android.gms.cast.framework.Session session) {
+        }
+
+        @Override
+        public void onSessionResumeFailed(com.google.android.gms.cast.framework.Session session, int error) {
+        }
+
+        @Override
+        public void onSessionResumed(com.google.android.gms.cast.framework.Session session, boolean wasSuspended) {
+        }
+
+        @Override
+        public void onSessionResuming(com.google.android.gms.cast.framework.Session session, String sessionId) {
+        }
+
+        @Override
+        public void onSessionStartFailed(com.google.android.gms.cast.framework.Session session, int error) {
+        }
+
+        @Override
+        public void onSessionStarting(com.google.android.gms.cast.framework.Session session) {
+        }
+
+        @Override
+        public void onSessionSuspended(com.google.android.gms.cast.framework.Session session, int reason) {
         }
     }
 

@@ -184,24 +184,111 @@ public class ChromecastSession {
      * @param message the message to send
      * @param callback called with success or error
      */
-    public void sendMessage(final String namespace, final String message, final CallbackContext callback) {
+    public void sendMessage(final String namespace, final String message, final ResultCallback<Status> callback) {
         if (client == null || session == null) {
-            callback.error("session_error");
             return;
         }
         activity.runOnUiThread(new Runnable() {
             public void run() {
-                session.sendMessage(namespace, message).setResultCallback(new ResultCallback<Status>() {
-                    @Override
-                    public void onResult(Status result) {
-                        if (!result.isSuccess()) {
-                            callback.success();
-                        } else {
-                            callback.error(result.toString());
-                        }
-                    }
-                });
+                session.sendMessage(namespace, message).setResultCallback(callback);
+            }
+        });
+    }
 
+    /**
+     * Pause the current media.
+     */
+    public void pause() {
+        if (client == null || session == null) {
+            return;
+        }
+        activity.runOnUiThread(new Runnable() {
+            public void run() {
+                try {
+                    client.pause();
+                } catch (Exception e) {
+                    android.util.Log.e("Chromecast", "Pause error: " + e.getMessage(), e);
+                }
+            }
+        });
+    }
+
+    /**
+     * Play/resume the current media.
+     */
+    public void play() {
+        if (client == null || session == null) {
+            return;
+        }
+        activity.runOnUiThread(new Runnable() {
+            public void run() {
+                try {
+                    client.play();
+                } catch (Exception e) {
+                    android.util.Log.e("Chromecast", "Play error: " + e.getMessage(), e);
+                }
+            }
+        });
+    }
+
+    /**
+     * Seek to a position in the current media.
+     * @param positionMs position in milliseconds
+     */
+    public void seek(long positionMs) {
+        if (client == null || session == null) {
+            android.util.Log.e("Chromecast", "Seek failed: no client or session");
+            return;
+        }
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    android.util.Log.d("Chromecast", "Seek position: " + positionMs);
+                    MediaSeekOptions options = new MediaSeekOptions.Builder()
+                            .setPosition(positionMs)
+                            .setResumeState(MediaSeekOptions.RESUME_STATE_UNCHANGED)
+                            .build();
+                    client.seek(options);
+                } catch (Exception e) {
+                    android.util.Log.e("Chromecast", "Seek error: " + e.getMessage(), e);
+                }
+            }
+        });
+    }
+
+    /**
+     * Skip to next item in queue.
+     */
+    public void next() {
+        if (client == null || session == null) {
+            return;
+        }
+        activity.runOnUiThread(new Runnable() {
+            public void run() {
+                try {
+                    client.queueNext(null);
+                } catch (Exception e) {
+                    android.util.Log.e("Chromecast", "Next error: " + e.getMessage(), e);
+                }
+            }
+        });
+    }
+
+    /**
+     * Go to previous item in queue.
+     */
+    public void prev() {
+        if (client == null || session == null) {
+            return;
+        }
+        activity.runOnUiThread(new Runnable() {
+            public void run() {
+                try {
+                    client.queuePrev(null);
+                } catch (Exception e) {
+                    android.util.Log.e("Chromecast", "Prev error: " + e.getMessage(), e);
+                }
             }
         });
     }

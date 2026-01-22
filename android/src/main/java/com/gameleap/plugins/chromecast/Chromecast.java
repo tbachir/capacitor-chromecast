@@ -1,7 +1,11 @@
 package com.gameleap.plugins.chromecast;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.mediarouter.media.MediaRouter;
 
 import com.getcapacitor.JSArray;
@@ -11,18 +15,15 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.google.android.gms.cast.CastDevice;
+import com.google.android.gms.cast.framework.Session;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
 
-import org.apache.cordova.CallbackContext;
-import org.apache.cordova.LOG;
-import org.apache.cordova.PluginResult;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONStringer;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Type;
 import java.util.List;
 
 @CapacitorPlugin()
@@ -48,78 +49,9 @@ public class Chromecast extends Plugin {
      */
     private PluginCall scanPluginCall;
     /**
-     * Client's event listener callback.
-     */
-    private CallbackContext eventCallback;
-    /**
      * In the case that chromecast can't be used.
      **/
     private String noChromecastError;
-
-    public boolean execute(String action, JSONArray args, CallbackContext cbContext) throws JSONException {
-        if (noChromecastError != null) {
-            cbContext.error(ChromecastUtilities.createError("api_not_initialized", noChromecastError));
-            return true;
-        }
-        try {
-            Method[] list = this.getClass().getMethods();
-            Method methodToExecute = null;
-            for (Method method : list) {
-                if (method.getName().equals(action)) {
-                    Type[] types = method.getGenericParameterTypes();
-                    // +1 is the cbContext
-                    if (args.length() + 1 == types.length) {
-                        boolean isValid = true;
-                        for (int i = 0; i < args.length(); i++) {
-                            // Handle null/undefined arguments
-                            if (JSONObject.NULL.equals(args.get(i))) {
-                                continue;
-                            }
-                            Class arg = args.get(i).getClass();
-                            if (types[i] != arg) {
-                                isValid = false;
-                                break;
-                            }
-                        }
-                        if (isValid) {
-                            methodToExecute = method;
-                            break;
-                        }
-                    }
-                }
-            }
-            if (methodToExecute != null) {
-                Type[] types = methodToExecute.getGenericParameterTypes();
-                Object[] variableArgs = new Object[types.length];
-                for (int i = 0; i < args.length(); i++) {
-                    variableArgs[i] = args.get(i);
-                    // Translate null JSONObject to null
-                    if (JSONObject.NULL.equals(variableArgs[i])) {
-                        variableArgs[i] = null;
-                    }
-                }
-                variableArgs[variableArgs.length - 1] = cbContext;
-                Class<?> r = methodToExecute.getReturnType();
-                if (r == boolean.class) {
-                    return (Boolean) methodToExecute.invoke(this, variableArgs);
-                } else {
-                    methodToExecute.invoke(this, variableArgs);
-                    return true;
-                }
-            } else {
-                return false;
-            }
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-            return false;
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-            return false;
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
 
     /**
      * Initialize all of the MediaRouter stuff with the AppId.
@@ -130,8 +62,16 @@ public class Chromecast extends Plugin {
      */
     @PluginMethod
     public boolean initialize(final PluginCall pluginCall) {
-        // The appId we're going to use for ALL session requests
         String appId = pluginCall.getString("appId");
+        Log.d(TAG, "Initialize called with App ID: " + appId);
+
+        if (appId == null || appId.isEmpty()) {
+            Log.e(TAG, "App ID is null or empty");
+            pluginCall.reject("App ID is required");
+            return false;
+        }
+
+        Log.d(TAG, "App ID validation passed: " + appId);
         // tab_and_origin_scoped | origin_scoped | page_scoped
         String autoJoinPolicy = pluginCall.getString("autoJoinPolicy");
         // create_session | cast_this_tab
@@ -142,10 +82,79 @@ public class Chromecast extends Plugin {
         try {
             this.connection = new ChromecastConnection(getActivity(), new ChromecastConnection.Listener() {
                 @Override
+                public void onSessionStarted(Session session, String sessionId) {
+                    try {
+                        JSONObject result = new JSONObject();
+                        result.put("isConnected", session.isConnected());
+                        result.put("sessionId", sessionId);
+                        sendEvent("SESSION_STARTED", JSObject.fromJSONObject(result));
+                    } catch (JSONException e) {
+                        Log.e(TAG, "Error creating SESSION_STARTED event", e);
+                    }
+                }
+
+                @Override
+                public void onSessionEnded(Session session, int error) {
+                    try {
+                        JSONObject result = new JSONObject();
+                        result.put("isConnected", session.isConnected());
+                        result.put("error", error);
+                        sendEvent("SESSION_ENDED", JSObject.fromJSONObject(result));
+                    } catch (JSONException e) {
+                        Log.e(TAG, "Error creating SESSION_ENDED event", e);
+                    }
+                }
+
+                @Override
+                public void onSessionEnding(Session session) {
+                }
+
+                @Override
+                public void onSessionResumeFailed(Session session, int error) {
+                }
+
+                @Override
+                public void onSessionResumed(Session session, boolean wasSuspended) {
+                    try {
+                        JSONObject result = new JSONObject();
+                        result.put("isConnected", session.isConnected());
+                        result.put("wasSuspended", wasSuspended);
+                        sendEvent("SESSION_RESUMED", JSObject.fromJSONObject(result));
+                    } catch (JSONException e) {
+                        Log.e(TAG, "Error creating SESSION_RESUMED event", e);
+                    }
+                }
+
+                @Override
+                public void onSessionResuming(Session session, String sessionId) {
+                }
+
+                @Override
+                public void onSessionStartFailed(Session session, int error) {
+                    try {
+                        JSONObject result = new JSONObject();
+                        result.put("isConnected", session.isConnected());
+                        result.put("error", error);
+                        sendEvent("SESSION_START_FAILED", JSObject.fromJSONObject(result));
+                    } catch (JSONException e) {
+                        Log.e(TAG, "Error creating SESSION_START_FAILED event", e);
+                    }
+                }
+
+                @Override
+                public void onSessionStarting(Session session) {
+                }
+
+                @Override
+                public void onSessionSuspended(Session session, int reason) {
+                }
+
+                @Override
                 public void onSessionRejoin(JSONObject jsonSession) {
                     try {
                         sendEvent("SESSION_LISTENER", JSObject.fromJSONObject(jsonSession));
                     } catch (JSONException e) {
+                        Log.e(TAG, "Error creating SESSION_LISTENER event", e);
                     }
                 }
 
@@ -154,6 +163,7 @@ public class Chromecast extends Plugin {
                     try {
                         sendEvent("SESSION_UPDATE", JSObject.fromJSONObject(jsonSession));
                     } catch (JSONException e) {
+                        Log.e(TAG, "Error creating SESSION_UPDATE event", e);
                     }
                 }
 
@@ -172,20 +182,18 @@ public class Chromecast extends Plugin {
                     try {
                         sendEvent("MEDIA_LOAD", JSObject.fromJSONObject(jsonMedia));
                     } catch (JSONException e) {
+                        Log.e(TAG, "Error creating MEDIA_LOAD event", e);
                     }
                 }
 
                 @Override
                 public void onMediaUpdate(JSONObject jsonMedia) {
-//                    JSONArray out = new JSONArray();
-
-
-                    // TODO: Fix null pointer exception
                     try {
                         if (jsonMedia != null) {
                             sendEvent("MEDIA_UPDATE", JSObject.fromJSONObject(jsonMedia));
                         }
                     } catch (JSONException e) {
+                        Log.e(TAG, "Error creating MEDIA_UPDATE event", e);
                     }
                 }
 
@@ -196,7 +204,7 @@ public class Chromecast extends Plugin {
             });
             this.media = connection.getChromecastSession();
         } catch (RuntimeException e) {
-            Log.e("tag", "Error initializing Chromecast connection: " + e.getMessage());
+            Log.e(TAG, "Error initializing Chromecast connection: " + e.getMessage());
             noChromecastError = "Could not initialize chromecast: " + e.getMessage();
             e.printStackTrace();
         }
@@ -220,24 +228,61 @@ public class Chromecast extends Plugin {
             @Override
             public void onJoin(JSONObject jsonSession) {
                 try {
-                    pluginCall.success(JSObject.fromJSONObject(jsonSession));
+                    pluginCall.resolve(JSObject.fromJSONObject(jsonSession));
                 } catch (JSONException e) {
-                    pluginCall.error("json_parse_error", e);
+                    Log.e(TAG, "Error parsing session JSON", e);
+                    pluginCall.reject("session_parse_error", e.getMessage());
                 }
             }
 
             @Override
             public void onError(int errorCode) {
-                // TODO maybe handle some of the error codes better
-                pluginCall.error("session_error");
+                Log.e(TAG, "Session request failed with error code: " + errorCode);
+                String errorMessage = getErrorMessage(errorCode);
+                pluginCall.reject("session_error", errorMessage);
             }
 
             @Override
             public void onCancel() {
-                pluginCall.error("cancel");
+                Log.d(TAG, "Session request was cancelled by user");
+                pluginCall.reject("session_cancelled", "User cancelled the session request");
             }
         });
         return true;
+    }
+
+    /**
+     * Converts Cast error codes to more understandable messages
+     */
+    private String getErrorMessage(int errorCode) {
+        switch (errorCode) {
+            case 2000:
+                return "Authentication failed";
+            case 2001:
+                return "Invalid request";
+            case 2002:
+                return "Request cancelled";
+            case 2003:
+                return "Request not authorized";
+            case 2004:
+                return "Application not found";
+            case 2005:
+                return "Application not running";
+            case 2006:
+                return "Message too large";
+            case 2007:
+                return "Send buffer full";
+            case 2475:
+                return "Receiver application not found - check your internet connection and App ID";
+            case 7:
+                return "Network error";
+            case 8:
+                return "Internal error";
+            case 15:
+                return "Request timeout";
+            default:
+                return "Unknown error (code: " + errorCode + ")";
+        }
     }
 
     /**
@@ -248,24 +293,23 @@ public class Chromecast extends Plugin {
      */
     @PluginMethod
     public boolean selectRoute(final PluginCall pluginCall) {
-        // the id of the route to join
         String routeId = pluginCall.getString("routeId");
         connection.selectRoute(routeId, new ChromecastConnection.SelectRouteCallback() {
             @Override
             public void onJoin(JSONObject jsonSession) {
                 try {
-                    pluginCall.success(JSObject.fromJSONObject(jsonSession));
+                    pluginCall.resolve(JSObject.fromJSONObject(jsonSession));
                 } catch (JSONException e) {
-                    pluginCall.error("json_parse_error", e);
+                    pluginCall.reject("json_parse_error", e);
                 }
             }
 
             @Override
             public void onError(JSONObject message) {
                 try {
-                    pluginCall.success(JSObject.fromJSONObject(message));
+                    pluginCall.resolve(JSObject.fromJSONObject(message));
                 } catch (JSONException e) {
-                    pluginCall.error("json_parse_error", e);
+                    pluginCall.reject("json_parse_error", e);
                 }
             }
         });
@@ -273,79 +317,58 @@ public class Chromecast extends Plugin {
     }
 
     /**
-     * Set the volume level on the receiver - this is a Chromecast volume, not a Media volume.
+     * Send a custom message to the receiver.
      *
-     * @param newLevel        the level to set the volume to
-     * @param callbackContext called with .success or .error depending on the result
+     * @param pluginCall called with .success or .error depending on the result
      * @return true for cordova
      */
-    public boolean setReceiverVolumeLevel(Integer newLevel, CallbackContext callbackContext) {
-        return this.setReceiverVolumeLevel(newLevel.doubleValue(), callbackContext);
-    }
+    @PluginMethod
+    public boolean sendMessage(final PluginCall pluginCall) {
+        String namespace = pluginCall.getString("namespace");
+        String message = pluginCall.getString("message");
+        JSObject returnObj = new JSObject();
+        returnObj.put("success", false);
 
-    /**
-     * Set the volume level on the receiver - this is a Chromecast volume, not a Media volume.
-     *
-     * @param newLevel        the level to set the volume to
-     * @param callbackContext called with .success or .error depending on the result
-     * @return true for cordova
-     */
-    public boolean setReceiverVolumeLevel(Double newLevel, CallbackContext callbackContext) {
-        this.media.setVolume(newLevel, callbackContext);
-        return true;
-    }
+        if (this.media == null) this.media = connection.getChromecastSession();
+        if (this.media == null) {
+            pluginCall.resolve(returnObj);
+            return false;
+        }
 
-    /**
-     * Sets the muted boolean on the receiver - this is a Chromecast mute, not a Media mute.
-     *
-     * @param muted           if true set the media to muted, else, unmute
-     * @param callbackContext called with .success or .error depending on the result
-     * @return true for cordova
-     */
-    public boolean setReceiverMuted(Boolean muted, CallbackContext callbackContext) {
-        this.media.setMute(muted, callbackContext);
-        return true;
-    }
-
-    /**
-     * Send a custom message to the receiver - we don't need this just yet... it was just simple to implement on the js side.
-     *
-     * @param namespace       namespace
-     * @param message         the message to send
-     * @param callbackContext called with .success or .error depending on the result
-     * @return true for cordova
-     */
-    public boolean sendMessage(String namespace, String message, final CallbackContext callbackContext) {
-        this.media.sendMessage(namespace, message, callbackContext);
+        this.media.sendMessage(namespace, message, new ResultCallback<Status>() {
+            @Override
+            public void onResult(Status result) {
+                if (!result.isSuccess()) {
+                    returnObj.put("error", result.getStatus().toString());
+                } else {
+                    returnObj.put("success", true);
+                }
+                pluginCall.resolve(returnObj);
+            }
+        });
         return true;
     }
 
     /**
      * Adds a listener to a specific namespace.
      *
-     * @param namespace       namespace
-     * @param callbackContext called with .success or .error depending on the result
-     * @return true for cordova
+     * @param pluginCall called with .success or .error depending on the result
      */
-    public boolean addMessageListener(String namespace, CallbackContext callbackContext) {
-        this.media.addMessageListener(namespace);
-        callbackContext.success();
-        return true;
+    @PluginMethod
+    public void addMessageListener(PluginCall pluginCall) {
+        String namespace = pluginCall.getString("namespace");
+        if (namespace != null) {
+            this.media.addMessageListener(namespace);
+            pluginCall.resolve();
+        } else {
+            pluginCall.reject("namespace is required");
+        }
     }
 
     /**
      * Loads some media on the Chromecast using the media APIs.
      *
-     * @param contentId      The URL of the media item
-     * @param customData     CustomData
-     * @param contentType    MIME type of the content
-     * @param duration       Duration of the content
-     * @param streamType     buffered | live | other
-     * @param autoPlay       Whether or not to automatically start playing the media
-     * @param currentTime    Where to begin playing from
-     * @param metadata       Metadata
-     * @param textTrackStyle The text track style
-     * @param pluginCall     called with .success or .error depending on the result
+     * @param pluginCall called with .success or .error depending on the result
      */
     @PluginMethod
     public void loadMedia(final PluginCall pluginCall) {
@@ -359,142 +382,244 @@ public class Chromecast extends Plugin {
         JSObject metadata = pluginCall.getObject("metadata", new JSObject());
         JSObject textTrackStyle = pluginCall.getObject("textTrackStyle", new JSObject());
 
+        // Auto-detect content type if not specified
+        String detectedContentType = detectContentType(contentId, contentType);
+        if (!detectedContentType.equals(contentType)) {
+            Log.d(TAG, "ContentType corrected from '" + contentType + "' to '" + detectedContentType + "'");
+            contentType = detectedContentType;
+        }
+
+        // Adjust stream type for HLS
+        if (detectedContentType.equals("application/x-mpegURL") && (streamType == null || streamType.isEmpty())) {
+            streamType = "LIVE";
+            Log.d(TAG, "StreamType set to LIVE for HLS stream");
+        }
+
+        Log.d(TAG, "=== LOAD MEDIA DEBUG ===");
+        Log.d(TAG, "contentId: " + contentId);
+        Log.d(TAG, "contentType: " + contentType);
+        Log.d(TAG, "streamType: " + streamType);
+        Log.d(TAG, "autoPlay: " + autoPlay);
+        Log.d(TAG, "========================");
+
         this.connection.getChromecastSession().loadMedia(contentId, customData, contentType, duration, streamType, autoPlay, currentTime, metadata, textTrackStyle, pluginCall);
     }
 
     /**
-     * Play on the current media in the current session.
+     * Loads media with authentication headers.
      *
-     * @param callbackContext called with .success or .error depending on the result
-     * @return true for cordova
+     * @param pluginCall called with .success or .error depending on the result
      */
-    public boolean mediaPlay(CallbackContext callbackContext) {
-        media.mediaPlay(callbackContext);
-        return true;
+    @PluginMethod
+    public void loadMediaWithHeaders(final PluginCall pluginCall) {
+        String contentId = pluginCall.getString("contentId");
+        JSObject customData = pluginCall.getObject("customData", new JSObject());
+        String contentType = pluginCall.getString("contentType", "");
+        Integer duration = pluginCall.getInt("duration", 0);
+        String streamType = pluginCall.getString("streamType", "");
+        Boolean autoPlay = pluginCall.getBoolean("autoPlay", false);
+        Integer currentTime = pluginCall.getInt("currentTime", 0);
+        JSObject metadata = pluginCall.getObject("metadata", new JSObject());
+        JSObject textTrackStyle = pluginCall.getObject("textTrackStyle", new JSObject());
+        JSObject authHeaders = pluginCall.getObject("authHeaders", new JSObject());
+        String authToken = pluginCall.getString("authToken", "");
+
+        // Add auth headers to custom data
+        if (authHeaders != null && authHeaders.length() > 0) {
+            try {
+                customData.put("authHeaders", authHeaders);
+                Log.d(TAG, "Added auth headers to customData");
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to add auth headers to customData", e);
+            }
+        }
+
+        // Add auth token to custom data
+        if (authToken != null && !authToken.isEmpty()) {
+            try {
+                customData.put("authToken", authToken);
+                Log.d(TAG, "Added auth token to customData");
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to add auth token to customData", e);
+            }
+        }
+
+        // Auto-detect content type
+        String detectedContentType = detectContentType(contentId, contentType);
+        if (!detectedContentType.equals(contentType)) {
+            contentType = detectedContentType;
+        }
+
+        // Adjust stream type for HLS
+        if (detectedContentType.equals("application/x-mpegURL") && (streamType == null || streamType.isEmpty())) {
+            streamType = "LIVE";
+        }
+
+        this.connection.getChromecastSession().loadMedia(contentId, customData, contentType, duration, streamType, autoPlay, currentTime, metadata, textTrackStyle, pluginCall);
     }
 
     /**
-     * Pause on the current media in the current session.
+     * Simple method to launch media with default parameters.
      *
-     * @param callbackContext called with .success or .error depending on the result
-     * @return true for cordova
+     * @param pluginCall called with .success or .error depending on the result
      */
-    public boolean mediaPause(CallbackContext callbackContext) {
-        media.mediaPause(callbackContext);
-        return true;
-    }
+    @PluginMethod
+    public void launchMedia(final PluginCall pluginCall) {
+        String mediaUrl = pluginCall.getString("mediaUrl");
+        if (mediaUrl == null) {
+            mediaUrl = pluginCall.getString("url");
+        }
+        if (mediaUrl == null) {
+            mediaUrl = pluginCall.getString("options");
+        }
 
-    /**
-     * Seeks the current media in the current session.
-     *
-     * @param seekTime        - Seconds to seek to
-     * @param resumeState     - Resume state once seeking is complete: PLAYBACK_PAUSE or PLAYBACK_START
-     * @param callbackContext called with .success or .error depending on the result
-     * @return true for cordova
-     */
-    public boolean mediaSeek(Integer seekTime, String resumeState, CallbackContext callbackContext) {
-        media.mediaSeek(seekTime.longValue() * 1000, resumeState, callbackContext);
-        return true;
-    }
+        if (mediaUrl == null || mediaUrl.isEmpty()) {
+            Log.e(TAG, "No URL found in launchMedia");
+            pluginCall.reject("mediaUrl is required");
+            return;
+        }
 
+        Log.d(TAG, "launchMedia URL: " + mediaUrl);
 
-    /**
-     * Set the volume level and mute state on the media.
-     *
-     * @param level           the level to set the volume to
-     * @param muted           if true set the media to muted, else, unmute
-     * @param callbackContext called with .success or .error depending on the result
-     * @return true for cordova
-     */
-    public boolean setMediaVolume(Integer level, Boolean muted, CallbackContext callbackContext) {
-        return this.setMediaVolume(level.doubleValue(), muted, callbackContext);
-    }
+        if (this.connection == null) {
+            Log.e(TAG, "No Chromecast connection initialized");
+            pluginCall.resolve(new JSObject().put("value", false));
+            return;
+        }
 
-    /**
-     * Set the volume level and mute state on the media.
-     *
-     * @param level           the level to set the volume to
-     * @param muted           if true set the media to muted, else, unmute
-     * @param callbackContext called with .success or .error depending on the result
-     * @return true for cordova
-     */
-    public boolean setMediaVolume(Double level, Boolean muted, CallbackContext callbackContext) {
-        media.mediaSetVolume(level, muted, callbackContext);
-        return true;
-    }
-
-    /**
-     * Stops the current media.
-     *
-     * @param callbackContext called with .success or .error depending on the result
-     * @return true for cordova
-     */
-    public boolean mediaStop(CallbackContext callbackContext) {
-        media.mediaStop(callbackContext);
-        return true;
-    }
-
-    /**
-     * Handle Track changes.
-     *
-     * @param activeTrackIds  track Ids to set.
-     * @param textTrackStyle  text track style to set.
-     * @param callbackContext called with .success or .error depending on the result
-     * @return true for cordova
-     */
-    public boolean mediaEditTracksInfo(JSONArray activeTrackIds, JSONObject textTrackStyle, final CallbackContext callbackContext) {
-        long[] trackIds = new long[activeTrackIds.length()];
+        if (this.connection.getChromecastSession() == null) {
+            Log.e(TAG, "No active Chromecast session");
+            pluginCall.resolve(new JSObject().put("value", false));
+            return;
+        }
 
         try {
-            for (int i = 0; i < activeTrackIds.length(); i++) {
-                trackIds[i] = activeTrackIds.getLong(i);
+            JSObject customData = new JSObject();
+            String contentType = detectContentType(mediaUrl, null);
+            Integer duration = 0;
+            String streamType = "BUFFERED";
+
+            if (contentType.equals("application/x-mpegURL")) {
+                streamType = "LIVE";
             }
-        } catch (JSONException ignored) {
-            LOG.e(TAG, "Wrong format in activeTrackIds");
+
+            Boolean autoPlay = true;
+            Integer currentTime = 0;
+            JSObject metadata = new JSObject();
+            JSObject textTrackStyle = new JSObject();
+
+            try {
+                JSONObject customDataJSON = new JSONObject(customData.toString());
+                JSONObject metadataJSON = new JSONObject(metadata.toString());
+                JSONObject textTrackStyleJSON = new JSONObject(textTrackStyle.toString());
+
+                this.connection.getChromecastSession().loadMedia(
+                    mediaUrl,
+                    customDataJSON,
+                    contentType,
+                    duration.longValue(),
+                    streamType,
+                    autoPlay,
+                    currentTime.doubleValue(),
+                    metadataJSON,
+                    textTrackStyleJSON,
+                    pluginCall
+                );
+            } catch (JSONException e) {
+                Log.e(TAG, "JSON conversion error: " + e.getMessage());
+                pluginCall.reject("json_error", e);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Exception launching media: " + e.getMessage());
+            e.printStackTrace();
+            pluginCall.resolve(new JSObject().put("value", false));
         }
-
-        this.media.mediaEditTracksInfo(trackIds, textTrackStyle, callbackContext);
-        return true;
     }
 
     /**
-     * Loads a queue of media to the Chromecast.
+     * Pause the current media.
      *
-     * @param queueLoadRequest chrome.cast.media.QueueLoadRequest
-     * @param callbackContext  called with .success or .error depending on the result
-     * @return true for cordova
+     * @param pluginCall called with .success or .error depending on the result
      */
-    public boolean queueLoad(JSONObject queueLoadRequest, final CallbackContext callbackContext) {
-        this.media.queueLoad(queueLoadRequest, callbackContext);
-        return true;
-    }
-
-    /**
-     * Plays the item with itemId in the queue.
-     *
-     * @param itemId          The ID of the item to jump to.
-     * @param callbackContext called with .success or .error depending on the result
-     * @return true for cordova
-     */
-    public boolean queueJumpToItem(Integer itemId, final CallbackContext callbackContext) {
-        this.media.queueJumpToItem(itemId, callbackContext);
-        return true;
-    }
-
-    /**
-     * Plays the item with itemId in the queue.
-     *
-     * @param itemId          The ID of the item to jump to.
-     * @param callbackContext called with .success or .error depending on the result
-     * @return true for cordova
-     */
-    public boolean queueJumpToItem(Double itemId, final CallbackContext callbackContext) {
-        if (itemId - Double.valueOf(itemId).intValue() == 0) {
-            // Only perform the jump if the double is a whole number
-            return queueJumpToItem(Double.valueOf(itemId).intValue(), callbackContext);
-        } else {
-            return true;
+    @PluginMethod
+    public void mediaPause(PluginCall pluginCall) {
+        if (this.media == null) this.media = connection.getChromecastSession();
+        if (this.media == null) {
+            Log.d(TAG, "mediaPause: Session not found");
+            pluginCall.reject("No active session");
+            return;
         }
+        this.media.pause();
+        pluginCall.resolve();
+    }
+
+    /**
+     * Play/resume the current media.
+     *
+     * @param pluginCall called with .success or .error depending on the result
+     */
+    @PluginMethod
+    public void mediaPlay(PluginCall pluginCall) {
+        if (this.media == null) this.media = connection.getChromecastSession();
+        if (this.media == null) {
+            Log.d(TAG, "mediaPlay: Session not found");
+            pluginCall.reject("No active session");
+            return;
+        }
+        this.media.play();
+        pluginCall.resolve();
+    }
+
+    /**
+     * Seek to a position in the current media.
+     *
+     * @param pluginCall called with .success or .error depending on the result
+     */
+    @PluginMethod
+    public void mediaSeek(PluginCall pluginCall) {
+        if (this.media == null) this.media = connection.getChromecastSession();
+        if (this.media == null) {
+            Log.d(TAG, "mediaSeek: Session not found");
+            pluginCall.reject("No active session");
+            return;
+        }
+        long position = pluginCall.getInt("currentTime", 0);
+        this.media.seek(position);
+        pluginCall.resolve();
+    }
+
+    /**
+     * Skip to next item in queue.
+     *
+     * @param pluginCall called with .success or .error depending on the result
+     */
+    @PluginMethod
+    public void mediaNext(PluginCall pluginCall) {
+        if (this.media == null) this.media = connection.getChromecastSession();
+        if (this.media == null) {
+            Log.d(TAG, "mediaNext: Session not found");
+            pluginCall.reject("No active session");
+            return;
+        }
+        this.media.next();
+        pluginCall.resolve();
+    }
+
+    /**
+     * Go to previous item in queue.
+     *
+     * @param pluginCall called with .success or .error depending on the result
+     */
+    @PluginMethod
+    public void mediaPrev(PluginCall pluginCall) {
+        if (this.media == null) this.media = connection.getChromecastSession();
+        if (this.media == null) {
+            Log.d(TAG, "mediaPrev: Session not found");
+            pluginCall.reject("No active session");
+            return;
+        }
+        this.media.prev();
+        pluginCall.resolve();
     }
 
     /**
@@ -523,8 +648,6 @@ public class Chromecast extends Plugin {
 
     /**
      * Will actively scan for routes and send a json array to the client.
-     * It is super important that client calls "stopRouteScan", otherwise the
-     * battery could drain quickly.
      *
      * @param pluginCall called with .success or .error depending on the result
      * @return true for cordova
@@ -532,9 +655,7 @@ public class Chromecast extends Plugin {
     @PluginMethod
     public boolean startRouteScan(PluginCall pluginCall) {
         if (scanPluginCall != null) {
-
-            scanPluginCall.error("Started a new route scan before stopping previous one.");
-//            scanPluginCall.error(ChromecastUtilities.createError("cancel", "Started a new route scan before stopping previous one."));
+            scanPluginCall.reject("Started a new route scan before stopping previous one.");
         }
         scanPluginCall = pluginCall;
         Runnable startScan = new Runnable() {
@@ -544,10 +665,6 @@ public class Chromecast extends Plugin {
                     @Override
                     void onRouteUpdate(List<MediaRouter.RouteInfo> routes) {
                         if (scanPluginCall != null) {
-                            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK,
-                                    ChromecastUtilities.createRoutesArray(routes));
-                            pluginResult.setKeepCallback(true);
-
                             JSObject ret = new JSObject();
                             JSArray retArr = new JSArray();
 
@@ -556,9 +673,8 @@ public class Chromecast extends Plugin {
                             }
                             ret.put("routes", retArr);
 
-                            scanPluginCall.success(ret);
+                            scanPluginCall.resolve(ret);
                         } else {
-                            // Try to get the scan to stop because we already ended the scanCallback
                             connection.stopRouteScan(clientScan, null);
                         }
                     }
@@ -567,7 +683,6 @@ public class Chromecast extends Plugin {
             }
         };
         if (clientScan != null) {
-            // Stop any other existing clientScan
             connection.stopRouteScan(clientScan, startScan);
         } else {
             startScan.run();
@@ -583,23 +698,74 @@ public class Chromecast extends Plugin {
      */
     @PluginMethod
     public boolean stopRouteScan(final PluginCall pluginCall) {
-        // Stop any other existing clientScan
         connection.stopRouteScan(clientScan, new Runnable() {
             @Override
             public void run() {
                 if (scanPluginCall != null) {
-                    scanPluginCall.error("Scan stopped.");
+                    scanPluginCall.reject("Scan stopped.");
                     scanPluginCall = null;
                 }
-                pluginCall.success();
+                pluginCall.resolve();
             }
         });
         return true;
     }
 
     /**
-     * Do everything you need to for "setup" - calling back sets the isAvailable and lets every function on the
-     * javascript side actually do stuff.
+     * Network diagnostic method.
+     *
+     * @param pluginCall called with diagnostic info
+     */
+    @PluginMethod
+    public void networkDiagnostic(PluginCall pluginCall) {
+        JSObject result = new JSObject();
+
+        try {
+            ConnectivityManager cm = (ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+
+            if (activeNetwork != null) {
+                result.put("networkConnected", true);
+                result.put("networkType", activeNetwork.getTypeName());
+                result.put("networkState", activeNetwork.getState().toString());
+
+                boolean isWiFi = activeNetwork.getType() == ConnectivityManager.TYPE_WIFI;
+                result.put("isWiFi", isWiFi);
+
+                if (!isWiFi) {
+                    result.put("warning", "Chromecast requires WiFi. You are on " + activeNetwork.getTypeName());
+                }
+            } else {
+                result.put("networkConnected", false);
+                result.put("error", "No network connection detected");
+            }
+
+            try {
+                int gmsAvailable = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(getContext());
+                result.put("googlePlayServices", gmsAvailable == ConnectionResult.SUCCESS);
+                if (gmsAvailable != ConnectionResult.SUCCESS) {
+                    result.put("gmsError", "Google Play Services not available: " + gmsAvailable);
+                }
+            } catch (Exception e) {
+                result.put("gmsError", "Error checking Google Play Services: " + e.getMessage());
+            }
+
+            if (connection != null) {
+                result.put("castConnectionAvailable", true);
+            } else {
+                result.put("castConnectionAvailable", false);
+            }
+
+        } catch (Exception e) {
+            result.put("error", "Error during diagnostic: " + e.getMessage());
+            Log.e(TAG, "Error in networkDiagnostic", e);
+        }
+
+        pluginCall.resolve(result);
+    }
+
+    /**
+     * Do everything you need to for "setup".
      *
      * @return true for cordova
      */
@@ -609,7 +775,7 @@ public class Chromecast extends Plugin {
                 @Override
                 public void run() {
                     if (scanPluginCall != null) {
-                        scanPluginCall.error("Scan stopped because setup triggered.");
+                        scanPluginCall.reject("Scan stopped because setup triggered.");
                         scanPluginCall = null;
                     }
                     sendEvent("SETUP", new JSObject());
@@ -618,6 +784,33 @@ public class Chromecast extends Plugin {
         }
 
         return true;
+    }
+
+    /**
+     * Auto-detect content type based on URL.
+     */
+    private String detectContentType(String url, String providedContentType) {
+        if (url == null) {
+            return providedContentType != null ? providedContentType : "video/mp4";
+        }
+
+        String baseUrl = url.split("\\?")[0].toLowerCase();
+
+        if (baseUrl.endsWith(".m3u8")) {
+            Log.d(TAG, "Detected HLS stream (.m3u8)");
+            return "application/x-mpegURL";
+        } else if (baseUrl.endsWith(".mpd")) {
+            Log.d(TAG, "Detected DASH stream (.mpd)");
+            return "application/dash+xml";
+        } else if (baseUrl.endsWith(".mp4")) {
+            return "video/mp4";
+        } else if (baseUrl.endsWith(".webm")) {
+            return "video/webm";
+        } else if (baseUrl.endsWith(".mkv")) {
+            return "video/x-matroska";
+        }
+
+        return providedContentType != null && !providedContentType.isEmpty() ? providedContentType : "video/mp4";
     }
 
     /**
