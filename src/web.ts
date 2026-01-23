@@ -51,6 +51,7 @@ export class ChromecastWeb extends WebPlugin implements ChromecastPlugin {
           () => {},
           (status: any) => {
             if (status === this.cast.ReceiverAvailability.AVAILABLE) {
+              // Receiver is available
             }
           },
         );
@@ -67,8 +68,8 @@ export class ChromecastWeb extends WebPlugin implements ChromecastPlugin {
   }
 
   public async launchMedia(media: string) {
-    let mediaInfo = new this.cast.media.MediaInfo(media);
-    let request = new this.cast.media.LoadRequest(mediaInfo);
+    const mediaInfo = new this.cast.media.MediaInfo(media);
+    const request = new this.cast.media.LoadRequest(mediaInfo);
     console.log('launch media with session', this.session);
 
     if (!this.session) {
