@@ -33,6 +33,7 @@ npx cap sync
 * [`removeMessageListener(...)`](#removemessagelistener)
 * [`networkDiagnostic()`](#networkdiagnostic)
 * [`addListener(string, ...)`](#addlistenerstring-)
+* [`removeAllListeners()`](#removealllisteners)
 * [Interfaces](#interfaces)
 * [Type Aliases](#type-aliases)
 
@@ -335,6 +336,17 @@ Available events:
 | **`listenerFunc`** | <code><a href="#listenercallback">ListenerCallback</a></code> |
 
 **Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
+
+--------------------
+
+
+### removeAllListeners()
+
+```typescript
+removeAllListeners() => Promise<void>
+```
+
+Remove all listeners for this plugin.
 
 --------------------
 

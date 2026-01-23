@@ -301,6 +301,16 @@
           "ListenerCallback"
         ],
         "slug": "addlistenerstring-"
+      },
+      {
+        "name": "removeAllListeners",
+        "signature": "() => Promise<void>",
+        "parameters": [],
+        "returns": "Promise<void>",
+        "tags": [],
+        "docs": "Remove all listeners for this plugin.",
+        "complexTypes": [],
+        "slug": "removealllisteners"
       }
     ],
     "properties": []

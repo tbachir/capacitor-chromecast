@@ -226,4 +226,9 @@ export interface ChromecastPlugin {
     eventName: string,
     listenerFunc: ListenerCallback,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
+
+  /**
+   * Remove all listeners for this plugin.
+   */
+  removeAllListeners(): Promise<void>;
 }
