@@ -5,7 +5,7 @@ import type { ChromecastPlugin } from './definitions';
 // Singleton promise to prevent race conditions in Capacitor's loadPluginImplementation
 let webInstancePromise: Promise<import('./web').ChromecastWeb> | null = null;
 
-const Chromecast = registerPlugin<ChromecastPlugin>('KosmiCast', {
+const Chromecast = registerPlugin<ChromecastPlugin>('Chromecast', {
   web: () => {
     if (!webInstancePromise) {
       webInstancePromise = import('./web').then(m => new m.ChromecastWeb());
