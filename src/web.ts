@@ -649,6 +649,17 @@ export class ChromecastWeb
     }
   }
 
+  async removeMessageListener(options: { namespace: string }): Promise<void> {
+    const session = this.context?.getCurrentSession();
+    const listener = this.messageListeners.get(options.namespace);
+
+    if (session && listener) {
+      session.removeMessageListener(options.namespace, listener);
+    }
+
+    this.messageListeners.delete(options.namespace);
+  }
+
   async networkDiagnostic(): Promise<NetworkDiagnosticResult> {
     return {
       networkConnected: navigator.onLine,
