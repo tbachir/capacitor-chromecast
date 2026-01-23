@@ -22,7 +22,7 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-@CapacitorPlugin
+@CapacitorPlugin(name = "CapChromecast")
 public class Chromecast extends Plugin {
 
     /**
