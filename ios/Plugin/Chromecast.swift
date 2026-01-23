@@ -64,7 +64,7 @@ enum ChromecastError: Error, LocalizedError {
     private var pendingRouteScanCompletion: (([[String: Any]]) -> Void)?
 
     // MARK: - Initialization
-    @objc public func initialize(appId: String?, listener: ChromecastListener, completion: @escaping (Error?) -> Void) {
+    public func initialize(appId: String?, listener: ChromecastListener, completion: @escaping (Error?) -> Void) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else {
                 completion(ChromecastError.notInitialized)
@@ -165,7 +165,7 @@ enum ChromecastError: Error, LocalizedError {
         }
     }
 
-    @objc public func endSession(stopCasting: Bool, completion: @escaping (Error?) -> Void) {
+    public func endSession(stopCasting: Bool, completion: @escaping (Error?) -> Void) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else {
                 completion(ChromecastError.notInitialized)
@@ -180,7 +180,7 @@ enum ChromecastError: Error, LocalizedError {
     }
 
     // MARK: - Device Discovery
-    @objc public func startRouteScan(timeout: TimeInterval?, completion: @escaping ([[String: Any]]) -> Void) {
+    public func startRouteScan(timeout: TimeInterval?, completion: @escaping ([[String: Any]]) -> Void) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self,
                   let discoveryManager = self.discoveryManager else {
@@ -203,7 +203,7 @@ enum ChromecastError: Error, LocalizedError {
         }
     }
 
-    @objc public func stopRouteScan() {
+    public func stopRouteScan() {
         DispatchQueue.main.async { [weak self] in
             self?.pendingRouteScanCompletion = nil
         }
@@ -226,7 +226,7 @@ enum ChromecastError: Error, LocalizedError {
     // MARK: - Media Control
 
     /// Pause current media playback
-    @objc public func pause(completion: @escaping (Error?) -> Void) {
+    public func pause(completion: @escaping (Error?) -> Void) {
         DispatchQueue.main.async { [weak self] in
             guard let client = self?.currentSession?.remoteMediaClient else {
                 completion(ChromecastError.noSession)
@@ -238,7 +238,7 @@ enum ChromecastError: Error, LocalizedError {
     }
 
     /// Resume media playback
-    @objc public func play(completion: @escaping (Error?) -> Void) {
+    public func play(completion: @escaping (Error?) -> Void) {
         DispatchQueue.main.async { [weak self] in
             guard let client = self?.currentSession?.remoteMediaClient else {
                 completion(ChromecastError.noSession)
@@ -250,7 +250,7 @@ enum ChromecastError: Error, LocalizedError {
     }
 
     /// Seek to position in seconds
-    @objc public func seek(position: Double, completion: @escaping (Error?) -> Void) {
+    public func seek(position: Double, completion: @escaping (Error?) -> Void) {
         DispatchQueue.main.async { [weak self] in
             guard let client = self?.currentSession?.remoteMediaClient else {
                 completion(ChromecastError.noSession)
@@ -264,7 +264,7 @@ enum ChromecastError: Error, LocalizedError {
     }
 
     /// Skip to next item in queue
-    @objc public func next(completion: @escaping (Error?) -> Void) {
+    public func next(completion: @escaping (Error?) -> Void) {
         DispatchQueue.main.async { [weak self] in
             guard let client = self?.currentSession?.remoteMediaClient else {
                 completion(ChromecastError.noSession)
@@ -276,7 +276,7 @@ enum ChromecastError: Error, LocalizedError {
     }
 
     /// Go to previous item in queue
-    @objc public func prev(completion: @escaping (Error?) -> Void) {
+    public func prev(completion: @escaping (Error?) -> Void) {
         DispatchQueue.main.async { [weak self] in
             guard let client = self?.currentSession?.remoteMediaClient else {
                 completion(ChromecastError.noSession)
@@ -456,27 +456,46 @@ enum ChromecastError: Error, LocalizedError {
 
     // MARK: - Messaging
 
-    private var messageNamespaces: Set<String> = []
+    private var messageChannels: [String: GCKGenericChannel] = [:]
 
     /// Send a custom message to the receiver
     public func sendMessage(namespace: String, message: String, completion: @escaping (Result<Bool, Error>) -> Void) {
         DispatchQueue.main.async { [weak self] in
-            guard let session = self?.currentSession else {
+            guard let self = self else {
+                completion(.failure(ChromecastError.notInitialized))
+                return
+            }
+
+            guard let session = self.currentSession else {
                 completion(.failure(ChromecastError.noSession))
                 return
             }
 
-            do {
-                try session.sendMessage(message, toDestination: namespace)
-                completion(.success(true))
-            } catch {
+            // Get or create channel for namespace
+            let channel: GCKGenericChannel
+            if let existingChannel = self.messageChannels[namespace] {
+                channel = existingChannel
+            } else {
+                channel = GCKGenericChannel(namespace: namespace)
+                channel.delegate = self
+                session.add(channel)
+                self.messageChannels[namespace] = channel
+            }
+
+            // Send message via channel
+            var error: GCKError?
+            let result = channel.sendTextMessage(message, error: &error)
+
+            if result == 0, let error = error {
                 completion(.failure(ChromecastError.sessionError("Failed to send message: \(error.localizedDescription)")))
+            } else {
+                completion(.success(true))
             }
         }
     }
 
     /// Add a message listener for a namespace
-    @objc public func addMessageListener(namespace: String, completion: @escaping (Error?) -> Void) {
+    public func addMessageListener(namespace: String, completion: @escaping (Error?) -> Void) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else {
                 completion(ChromecastError.notInitialized)
@@ -489,9 +508,11 @@ enum ChromecastError: Error, LocalizedError {
             }
 
             // Only add if not already listening
-            if !self.messageNamespaces.contains(namespace) {
-                session.addChannel(GCKGenericChannel(namespace: namespace))
-                self.messageNamespaces.insert(namespace)
+            if self.messageChannels[namespace] == nil {
+                let channel = GCKGenericChannel(namespace: namespace)
+                channel.delegate = self
+                session.add(channel)
+                self.messageChannels[namespace] = channel
             }
 
             completion(nil)
@@ -501,7 +522,7 @@ enum ChromecastError: Error, LocalizedError {
     // MARK: - Network Diagnostic
 
     /// Get network diagnostic information
-    @objc public func networkDiagnostic(completion: @escaping ([String: Any]) -> Void) {
+    public func networkDiagnostic(completion: @escaping ([String: Any]) -> Void) {
         DispatchQueue.main.async { [weak self] in
             var result: [String: Any] = [:]
 
@@ -888,7 +909,7 @@ extension Chromecast: GCKSessionManagerListener {
 
             self.currentSession = nil
             self.remoteMediaClient = nil
-            self.messageNamespaces.removeAll()
+            self.messageChannels.removeAll()
 
             self.listener?.onSessionEnd(sessionObject)
         }
@@ -998,6 +1019,18 @@ extension Chromecast: GCKRequestDelegate {
         DispatchQueue.main.async { [weak self] in
             self?.pendingMediaCompletion?(.failure(ChromecastError.cancelled))
             self?.pendingMediaCompletion = nil
+        }
+    }
+}
+
+// MARK: - GCKGenericChannelDelegate
+extension Chromecast: GCKGenericChannelDelegate {
+
+    public func cast(_ channel: GCKGenericChannel, didReceiveTextMessage message: String, withNamespace protocolNamespace: String) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            let deviceId = self.currentSession?.device.deviceID ?? ""
+            self.listener?.onMessageReceived(deviceId, namespace: protocolNamespace, message: message)
         }
     }
 }
