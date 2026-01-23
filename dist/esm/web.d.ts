@@ -24,6 +24,14 @@ declare global {
                     SESSION_ENDED: string;
                     SESSION_ENDING: string;
                 };
+                RemotePlayerEventType: {
+                    ANY_CHANGE: string;
+                    IS_PAUSED_CHANGED: string;
+                    CURRENT_TIME_CHANGED: string;
+                    PLAYER_STATE_CHANGED: string;
+                };
+                RemotePlayer: new () => RemotePlayer;
+                RemotePlayerController: new (player: RemotePlayer) => RemotePlayerController;
             };
         };
         chrome: {
@@ -33,8 +41,61 @@ declare global {
                     ORIGIN_SCOPED: string;
                     PAGE_SCOPED: string;
                 };
+                media: {
+                    MediaInfo: new (contentId: string, contentType: string) => ChromeMediaInfo;
+                    LoadRequest: new (mediaInfo: ChromeMediaInfo) => ChromeLoadRequest;
+                    GenericMediaMetadata: new () => ChromeGenericMediaMetadata;
+                    TextTrackStyle: new () => ChromeTextTrackStyle;
+                    StreamType: {
+                        BUFFERED: string;
+                        LIVE: string;
+                        OTHER: string;
+                    };
+                    PlayerState: {
+                        IDLE: string;
+                        PLAYING: string;
+                        PAUSED: string;
+                        BUFFERING: string;
+                    };
+                    IdleReason: {
+                        CANCELLED: string;
+                        INTERRUPTED: string;
+                        FINISHED: string;
+                        ERROR: string;
+                    };
+                    QueueJumpItemId: number;
+                };
+                Image: new (url: string) => ChromeImage;
             };
         };
+    }
+    interface ChromeMediaInfo {
+        contentId: string;
+        contentType: string;
+        streamType: string;
+        duration: number | null;
+        metadata: ChromeGenericMediaMetadata | null;
+        customData: Record<string, unknown> | null;
+        textTrackStyle: ChromeTextTrackStyle | null;
+    }
+    interface ChromeLoadRequest {
+        mediaInfo: ChromeMediaInfo;
+        autoplay: boolean;
+        currentTime: number;
+        customData: Record<string, unknown> | null;
+    }
+    interface ChromeGenericMediaMetadata {
+        metadataType: number;
+        title: string;
+        subtitle: string;
+        images: ChromeImage[];
+    }
+    interface ChromeTextTrackStyle {
+        fontScale: number;
+        fontFamily: string;
+    }
+    interface ChromeImage {
+        url: string;
     }
     interface CastContext {
         setOptions(options: {
@@ -62,6 +123,54 @@ declare global {
         sendMessage(namespace: string, message: unknown): Promise<void>;
         addMessageListener(namespace: string, listener: (namespace: string, message: string) => void): void;
         removeMessageListener(namespace: string, listener: (namespace: string, message: string) => void): void;
+        loadMedia(loadRequest: ChromeLoadRequest): Promise<chrome.cast.ErrorCode | null>;
+        getMediaSession(): ChromeMediaSession | null;
+    }
+    interface ChromeMediaSession {
+        mediaSessionId: number;
+        media: ChromeMediaInfo | null;
+        playbackRate: number;
+        playerState: string;
+        idleReason: string | null;
+        currentTime: number;
+        customData: Record<string, unknown>;
+        currentItemId: number;
+        volume: {
+            level: number;
+            muted: boolean;
+        };
+        getEstimatedTime(): number;
+        queueNext(successCallback?: () => void, errorCallback?: (error: chrome.cast.Error) => void): void;
+        queuePrev(successCallback?: () => void, errorCallback?: (error: chrome.cast.Error) => void): void;
+    }
+    namespace chrome.cast {
+        interface Error {
+            code: string;
+            description: string | null;
+            details: object | null;
+        }
+    }
+    interface RemotePlayer {
+        isConnected: boolean;
+        isPaused: boolean;
+        currentTime: number;
+        duration: number;
+        volumeLevel: number;
+        isMuted: boolean;
+        playerState: string;
+        mediaInfo: ChromeMediaInfo | null;
+    }
+    interface RemotePlayerController {
+        playOrPause(): void;
+        seek(): void;
+        stop(): void;
+        setVolumeLevel(): void;
+        muteOrUnmute(): void;
+        addEventListener(type: string, handler: (event: unknown) => void): void;
+        removeEventListener(type: string, handler: (event: unknown) => void): void;
+    }
+    namespace chrome.cast {
+        type ErrorCode = string;
     }
     interface CastStateEvent {
         castState: string;
@@ -75,6 +184,8 @@ export declare class ChromecastWeb extends WebPlugin implements Omit<ChromecastP
     private messageListeners;
     private appId;
     private contextSetup;
+    private remotePlayer;
+    private remotePlayerController;
     initialize(options?: InitializeOptions): Promise<void>;
     private setupCastContext;
     private setupMessageListenersForSession;
@@ -84,11 +195,11 @@ export declare class ChromecastWeb extends WebPlugin implements Omit<ChromecastP
     }): Promise<{
         success: boolean;
     }>;
-    loadMedia(_options: LoadMediaOptions): Promise<MediaObject>;
-    loadMediaWithHeaders(_options: LoadMediaWithHeadersOptions): Promise<MediaObject>;
+    loadMedia(options: LoadMediaOptions): Promise<MediaObject>;
+    loadMediaWithHeaders(options: LoadMediaWithHeadersOptions): Promise<MediaObject>;
     mediaPause(): Promise<void>;
     mediaPlay(): Promise<void>;
-    mediaSeek(_options: {
+    mediaSeek(options: {
         currentTime: number;
     }): Promise<void>;
     mediaNext(): Promise<void>;
@@ -113,4 +224,5 @@ export declare class ChromecastWeb extends WebPlugin implements Omit<ChromecastP
     }): Promise<void>;
     networkDiagnostic(): Promise<NetworkDiagnosticResult>;
     private createSessionObject;
+    private createMediaObject;
 }

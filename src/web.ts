@@ -36,6 +36,14 @@ declare global {
           SESSION_ENDED: string;
           SESSION_ENDING: string;
         };
+        RemotePlayerEventType: {
+          ANY_CHANGE: string;
+          IS_PAUSED_CHANGED: string;
+          CURRENT_TIME_CHANGED: string;
+          PLAYER_STATE_CHANGED: string;
+        };
+        RemotePlayer: new () => RemotePlayer;
+        RemotePlayerController: new (player: RemotePlayer) => RemotePlayerController;
       };
     };
     chrome: {
@@ -45,8 +53,66 @@ declare global {
           ORIGIN_SCOPED: string;
           PAGE_SCOPED: string;
         };
+        media: {
+          MediaInfo: new (contentId: string, contentType: string) => ChromeMediaInfo;
+          LoadRequest: new (mediaInfo: ChromeMediaInfo) => ChromeLoadRequest;
+          GenericMediaMetadata: new () => ChromeGenericMediaMetadata;
+          TextTrackStyle: new () => ChromeTextTrackStyle;
+          StreamType: {
+            BUFFERED: string;
+            LIVE: string;
+            OTHER: string;
+          };
+          PlayerState: {
+            IDLE: string;
+            PLAYING: string;
+            PAUSED: string;
+            BUFFERING: string;
+          };
+          IdleReason: {
+            CANCELLED: string;
+            INTERRUPTED: string;
+            FINISHED: string;
+            ERROR: string;
+          };
+          QueueJumpItemId: number;
+        };
+        Image: new (url: string) => ChromeImage;
       };
     };
+  }
+
+  interface ChromeMediaInfo {
+    contentId: string;
+    contentType: string;
+    streamType: string;
+    duration: number | null;
+    metadata: ChromeGenericMediaMetadata | null;
+    customData: Record<string, unknown> | null;
+    textTrackStyle: ChromeTextTrackStyle | null;
+  }
+
+  interface ChromeLoadRequest {
+    mediaInfo: ChromeMediaInfo;
+    autoplay: boolean;
+    currentTime: number;
+    customData: Record<string, unknown> | null;
+  }
+
+  interface ChromeGenericMediaMetadata {
+    metadataType: number;
+    title: string;
+    subtitle: string;
+    images: ChromeImage[];
+  }
+
+  interface ChromeTextTrackStyle {
+    fontScale: number;
+    fontFamily: string;
+  }
+
+  interface ChromeImage {
+    url: string;
   }
 
   interface CastContext {
@@ -82,6 +148,62 @@ declare global {
       namespace: string,
       listener: (namespace: string, message: string) => void,
     ): void;
+    loadMedia(loadRequest: ChromeLoadRequest): Promise<chrome.cast.ErrorCode | null>;
+    getMediaSession(): ChromeMediaSession | null;
+  }
+
+  interface ChromeMediaSession {
+    mediaSessionId: number;
+    media: ChromeMediaInfo | null;
+    playbackRate: number;
+    playerState: string;
+    idleReason: string | null;
+    currentTime: number;
+    customData: Record<string, unknown>;
+    currentItemId: number;
+    volume: { level: number; muted: boolean };
+    getEstimatedTime(): number;
+    queueNext(
+      successCallback?: () => void,
+      errorCallback?: (error: chrome.cast.Error) => void,
+    ): void;
+    queuePrev(
+      successCallback?: () => void,
+      errorCallback?: (error: chrome.cast.Error) => void,
+    ): void;
+  }
+
+  namespace chrome.cast {
+    interface Error {
+      code: string;
+      description: string | null;
+      details: object | null;
+    }
+  }
+
+  interface RemotePlayer {
+    isConnected: boolean;
+    isPaused: boolean;
+    currentTime: number;
+    duration: number;
+    volumeLevel: number;
+    isMuted: boolean;
+    playerState: string;
+    mediaInfo: ChromeMediaInfo | null;
+  }
+
+  interface RemotePlayerController {
+    playOrPause(): void;
+    seek(): void;
+    stop(): void;
+    setVolumeLevel(): void;
+    muteOrUnmute(): void;
+    addEventListener(type: string, handler: (event: unknown) => void): void;
+    removeEventListener(type: string, handler: (event: unknown) => void): void;
+  }
+
+  namespace chrome.cast {
+    type ErrorCode = string;
   }
 
   interface CastStateEvent {
@@ -103,6 +225,8 @@ export class ChromecastWeb
   > = new Map();
   private appId: string = '';
   private contextSetup: boolean = false;
+  private remotePlayer: RemotePlayer | null = null;
+  private remotePlayerController: RemotePlayerController | null = null;
 
   async initialize(options?: InitializeOptions): Promise<void> {
     // Check if already loaded
@@ -226,6 +350,10 @@ export class ChromecastWeb
     const initialState = context.getCastState();
     const available = initialState !== CastState.NO_DEVICES_AVAILABLE;
     this.notifyListeners('RECEIVER_LISTENER', { available });
+
+    // Initialize RemotePlayer and RemotePlayerController for media control
+    this.remotePlayer = new window.cast.framework.RemotePlayer();
+    this.remotePlayerController = new window.cast.framework.RemotePlayerController(this.remotePlayer);
   }
 
   private setupMessageListenersForSession(session: CastSession | null): void {
@@ -266,34 +394,145 @@ export class ChromecastWeb
     return { success: true };
   }
 
-  async loadMedia(_options: LoadMediaOptions): Promise<MediaObject> {
-    throw new Error('Web implementation not available');
+  async loadMedia(options: LoadMediaOptions): Promise<MediaObject> {
+    const session = this.context?.getCurrentSession();
+    if (!session) {
+      throw new Error('No active session');
+    }
+
+    const mediaInfo = new window.chrome.cast.media.MediaInfo(
+      options.contentId,
+      options.contentType || 'video/mp4',
+    );
+
+    // Set stream type
+    const streamTypeMap: Record<string, string> = {
+      buffered: window.chrome.cast.media.StreamType.BUFFERED,
+      live: window.chrome.cast.media.StreamType.LIVE,
+      other: window.chrome.cast.media.StreamType.OTHER,
+      BUFFERED: window.chrome.cast.media.StreamType.BUFFERED,
+      LIVE: window.chrome.cast.media.StreamType.LIVE,
+      OTHER: window.chrome.cast.media.StreamType.OTHER,
+    };
+    mediaInfo.streamType =
+      streamTypeMap[options.streamType || 'buffered'] ||
+      window.chrome.cast.media.StreamType.BUFFERED;
+
+    if (options.duration !== undefined) {
+      mediaInfo.duration = options.duration;
+    }
+
+    if (options.customData) {
+      mediaInfo.customData = options.customData;
+    }
+
+    // Set metadata if provided
+    if (options.metadata) {
+      const metadata = new window.chrome.cast.media.GenericMediaMetadata();
+      metadata.metadataType = options.metadata.metadataType ?? 0;
+      metadata.title = options.metadata.title ?? '';
+      metadata.subtitle = options.metadata.subtitle ?? '';
+      if (options.metadata.images) {
+        metadata.images = options.metadata.images.map(
+          img => new window.chrome.cast.Image(img.url),
+        );
+      }
+      mediaInfo.metadata = metadata;
+    }
+
+    // Set text track style if provided
+    if (options.textTrackStyle) {
+      const trackStyle = new window.chrome.cast.media.TextTrackStyle();
+      if (options.textTrackStyle.fontScale !== undefined) {
+        trackStyle.fontScale = options.textTrackStyle.fontScale;
+      }
+      if (options.textTrackStyle.fontFamily) {
+        trackStyle.fontFamily = options.textTrackStyle.fontFamily;
+      }
+      mediaInfo.textTrackStyle = trackStyle;
+    }
+
+    const loadRequest = new window.chrome.cast.media.LoadRequest(mediaInfo);
+    loadRequest.autoplay = options.autoPlay ?? true;
+    loadRequest.currentTime = options.currentTime ?? 0;
+
+    const error = await session.loadMedia(loadRequest);
+    if (error) {
+      throw new Error(`Failed to load media: ${error}`);
+    }
+
+    const mediaSession = session.getMediaSession();
+    return this.createMediaObject(mediaSession, session.getSessionId());
   }
 
   async loadMediaWithHeaders(
-    _options: LoadMediaWithHeadersOptions,
+    options: LoadMediaWithHeadersOptions,
   ): Promise<MediaObject> {
-    throw new Error('Web implementation not available');
+    // For web, headers can be passed via customData to be handled by the receiver
+    const customData = {
+      ...options.customData,
+      ...(options.authHeaders && { headers: options.authHeaders }),
+      ...(options.authToken && { authToken: options.authToken }),
+    };
+
+    return this.loadMedia({
+      ...options,
+      customData,
+    });
   }
 
   async mediaPause(): Promise<void> {
-    throw new Error('Web implementation not available');
+    if (!this.remotePlayer || !this.remotePlayerController) {
+      throw new Error('Cast not initialized');
+    }
+    if (!this.remotePlayer.isPaused) {
+      this.remotePlayerController.playOrPause();
+    }
   }
 
   async mediaPlay(): Promise<void> {
-    throw new Error('Web implementation not available');
+    if (!this.remotePlayer || !this.remotePlayerController) {
+      throw new Error('Cast not initialized');
+    }
+    if (this.remotePlayer.isPaused) {
+      this.remotePlayerController.playOrPause();
+    }
   }
 
-  async mediaSeek(_options: { currentTime: number }): Promise<void> {
-    throw new Error('Web implementation not available');
+  async mediaSeek(options: { currentTime: number }): Promise<void> {
+    if (!this.remotePlayer || !this.remotePlayerController) {
+      throw new Error('Cast not initialized');
+    }
+    this.remotePlayer.currentTime = options.currentTime;
+    this.remotePlayerController.seek();
   }
 
   async mediaNext(): Promise<void> {
-    throw new Error('Web implementation not available');
+    const session = this.context?.getCurrentSession();
+    const mediaSession = session?.getMediaSession();
+    if (!mediaSession) {
+      throw new Error('No active media session');
+    }
+    return new Promise((resolve, reject) => {
+      mediaSession.queueNext(
+        () => resolve(),
+        (error) => reject(new Error(error.description || 'Failed to skip to next')),
+      );
+    });
   }
 
   async mediaPrev(): Promise<void> {
-    throw new Error('Web implementation not available');
+    const session = this.context?.getCurrentSession();
+    const mediaSession = session?.getMediaSession();
+    if (!mediaSession) {
+      throw new Error('No active media session');
+    }
+    return new Promise((resolve, reject) => {
+      mediaSession.queuePrev(
+        () => resolve(),
+        (error) => reject(new Error(error.description || 'Failed to go to previous')),
+      );
+    });
   }
 
   async sessionStop(): Promise<void> {
@@ -311,15 +550,23 @@ export class ChromecastWeb
   async startRouteScan(_options?: {
     timeout?: number;
   }): Promise<{ routes: RouteInfo[] }> {
-    throw new Error('Web implementation not available');
+    // Web Cast SDK does not support programmatic device scanning.
+    // Device discovery is handled automatically by the browser's Cast button.
+    // Return empty routes - use requestSession() to show the device picker.
+    return { routes: [] };
   }
 
   async stopRouteScan(): Promise<void> {
-    throw new Error('Web implementation not available');
+    // Web Cast SDK does not support programmatic device scanning.
+    // This is a no-op on web.
   }
 
   async selectRoute(_options: { routeId: string }): Promise<SessionObject> {
-    throw new Error('Web implementation not available');
+    // Web Cast SDK does not support programmatic device selection.
+    // Use requestSession() to show the device picker dialog instead.
+    throw new Error(
+      'Programmatic device selection is not supported on web. Use requestSession() to show the device picker.',
+    );
   }
 
   async sendMessage(options: {
@@ -388,5 +635,86 @@ export class ChromecastWeb
       },
       media: [],
     };
+  }
+
+  private createMediaObject(
+    mediaSession: ChromeMediaSession | null,
+    sessionId: string,
+  ): MediaObject {
+    if (!mediaSession) {
+      return {
+        currentItemId: 0,
+        currentTime: 0,
+        customData: {},
+        mediaSessionId: 0,
+        playbackRate: 1,
+        playerState: 'UNKNOWN',
+        isAlive: false,
+        volume: { level: 1, muted: false },
+        sessionId,
+      };
+    }
+
+    const { PlayerState, IdleReason } = window.chrome.cast.media;
+    const playerStateMap: Record<string, MediaObject['playerState']> = {
+      [PlayerState.IDLE]: 'IDLE',
+      [PlayerState.PLAYING]: 'PLAYING',
+      [PlayerState.PAUSED]: 'PAUSED',
+      [PlayerState.BUFFERING]: 'BUFFERING',
+    };
+
+    const idleReasonMap: Record<string, MediaObject['idleReason']> = {
+      [IdleReason.CANCELLED]: 'CANCELLED',
+      [IdleReason.ERROR]: 'ERROR',
+      [IdleReason.FINISHED]: 'FINISHED',
+      [IdleReason.INTERRUPTED]: 'INTERRUPTED',
+    };
+
+    const mediaInfo = mediaSession.media;
+    const result: MediaObject = {
+      currentItemId: mediaSession.currentItemId || 0,
+      currentTime: mediaSession.getEstimatedTime?.() ?? mediaSession.currentTime ?? 0,
+      customData: mediaSession.customData || {},
+      mediaSessionId: mediaSession.mediaSessionId || 0,
+      playbackRate: mediaSession.playbackRate || 1,
+      playerState: playerStateMap[mediaSession.playerState] || 'UNKNOWN',
+      isAlive: mediaSession.playerState !== PlayerState.IDLE,
+      volume: {
+        level: mediaSession.volume?.level ?? this.remotePlayer?.volumeLevel ?? 1,
+        muted: mediaSession.volume?.muted ?? this.remotePlayer?.isMuted ?? false,
+      },
+      sessionId,
+    };
+
+    if (mediaSession.idleReason) {
+      result.idleReason = idleReasonMap[mediaSession.idleReason];
+    }
+
+    if (mediaInfo) {
+      const streamTypeMap: Record<string, 'BUFFERED' | 'LIVE' | 'OTHER'> = {
+        [window.chrome.cast.media.StreamType.BUFFERED]: 'BUFFERED',
+        [window.chrome.cast.media.StreamType.LIVE]: 'LIVE',
+        [window.chrome.cast.media.StreamType.OTHER]: 'OTHER',
+      };
+
+      result.media = {
+        contentId: mediaInfo.contentId,
+        contentType: mediaInfo.contentType,
+        customData: mediaInfo.customData || {},
+        duration: mediaInfo.duration ?? 0,
+        streamType: streamTypeMap[mediaInfo.streamType] || 'BUFFERED',
+      };
+
+      if (mediaInfo.metadata) {
+        result.media.metadata = {
+          metadataType: mediaInfo.metadata.metadataType,
+          title: mediaInfo.metadata.title,
+          subtitle: mediaInfo.metadata.subtitle,
+          images: mediaInfo.metadata.images?.map(img => ({ url: img.url })),
+        };
+      }
+    }
+
+    return result;
   }
 }

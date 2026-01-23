@@ -6,6 +6,8 @@ export class ChromecastWeb extends WebPlugin {
         this.messageListeners = new Map();
         this.appId = '';
         this.contextSetup = false;
+        this.remotePlayer = null;
+        this.remotePlayerController = null;
     }
     async initialize(options) {
         var _a;
@@ -110,6 +112,9 @@ export class ChromecastWeb extends WebPlugin {
         const initialState = context.getCastState();
         const available = initialState !== CastState.NO_DEVICES_AVAILABLE;
         this.notifyListeners('RECEIVER_LISTENER', { available });
+        // Initialize RemotePlayer and RemotePlayerController for media control
+        this.remotePlayer = new window.cast.framework.RemotePlayer();
+        this.remotePlayerController = new window.cast.framework.RemotePlayerController(this.remotePlayer);
     }
     setupMessageListenersForSession(session) {
         if (!session) {
@@ -140,26 +145,112 @@ export class ChromecastWeb extends WebPlugin {
         // This is a simplified implementation
         return { success: true };
     }
-    async loadMedia(_options) {
-        throw new Error('Web implementation not available');
+    async loadMedia(options) {
+        var _a, _b, _c, _d, _e, _f;
+        const session = (_a = this.context) === null || _a === void 0 ? void 0 : _a.getCurrentSession();
+        if (!session) {
+            throw new Error('No active session');
+        }
+        const mediaInfo = new window.chrome.cast.media.MediaInfo(options.contentId, options.contentType || 'video/mp4');
+        // Set stream type
+        const streamTypeMap = {
+            buffered: window.chrome.cast.media.StreamType.BUFFERED,
+            live: window.chrome.cast.media.StreamType.LIVE,
+            other: window.chrome.cast.media.StreamType.OTHER,
+            BUFFERED: window.chrome.cast.media.StreamType.BUFFERED,
+            LIVE: window.chrome.cast.media.StreamType.LIVE,
+            OTHER: window.chrome.cast.media.StreamType.OTHER,
+        };
+        mediaInfo.streamType =
+            streamTypeMap[options.streamType || 'buffered'] ||
+                window.chrome.cast.media.StreamType.BUFFERED;
+        if (options.duration !== undefined) {
+            mediaInfo.duration = options.duration;
+        }
+        if (options.customData) {
+            mediaInfo.customData = options.customData;
+        }
+        // Set metadata if provided
+        if (options.metadata) {
+            const metadata = new window.chrome.cast.media.GenericMediaMetadata();
+            metadata.metadataType = (_b = options.metadata.metadataType) !== null && _b !== void 0 ? _b : 0;
+            metadata.title = (_c = options.metadata.title) !== null && _c !== void 0 ? _c : '';
+            metadata.subtitle = (_d = options.metadata.subtitle) !== null && _d !== void 0 ? _d : '';
+            if (options.metadata.images) {
+                metadata.images = options.metadata.images.map(img => new window.chrome.cast.Image(img.url));
+            }
+            mediaInfo.metadata = metadata;
+        }
+        // Set text track style if provided
+        if (options.textTrackStyle) {
+            const trackStyle = new window.chrome.cast.media.TextTrackStyle();
+            if (options.textTrackStyle.fontScale !== undefined) {
+                trackStyle.fontScale = options.textTrackStyle.fontScale;
+            }
+            if (options.textTrackStyle.fontFamily) {
+                trackStyle.fontFamily = options.textTrackStyle.fontFamily;
+            }
+            mediaInfo.textTrackStyle = trackStyle;
+        }
+        const loadRequest = new window.chrome.cast.media.LoadRequest(mediaInfo);
+        loadRequest.autoplay = (_e = options.autoPlay) !== null && _e !== void 0 ? _e : true;
+        loadRequest.currentTime = (_f = options.currentTime) !== null && _f !== void 0 ? _f : 0;
+        const error = await session.loadMedia(loadRequest);
+        if (error) {
+            throw new Error(`Failed to load media: ${error}`);
+        }
+        const mediaSession = session.getMediaSession();
+        return this.createMediaObject(mediaSession, session.getSessionId());
     }
-    async loadMediaWithHeaders(_options) {
-        throw new Error('Web implementation not available');
+    async loadMediaWithHeaders(options) {
+        // For web, headers can be passed via customData to be handled by the receiver
+        const customData = Object.assign(Object.assign(Object.assign({}, options.customData), (options.authHeaders && { headers: options.authHeaders })), (options.authToken && { authToken: options.authToken }));
+        return this.loadMedia(Object.assign(Object.assign({}, options), { customData }));
     }
     async mediaPause() {
-        throw new Error('Web implementation not available');
+        if (!this.remotePlayer || !this.remotePlayerController) {
+            throw new Error('Cast not initialized');
+        }
+        if (!this.remotePlayer.isPaused) {
+            this.remotePlayerController.playOrPause();
+        }
     }
     async mediaPlay() {
-        throw new Error('Web implementation not available');
+        if (!this.remotePlayer || !this.remotePlayerController) {
+            throw new Error('Cast not initialized');
+        }
+        if (this.remotePlayer.isPaused) {
+            this.remotePlayerController.playOrPause();
+        }
     }
-    async mediaSeek(_options) {
-        throw new Error('Web implementation not available');
+    async mediaSeek(options) {
+        if (!this.remotePlayer || !this.remotePlayerController) {
+            throw new Error('Cast not initialized');
+        }
+        this.remotePlayer.currentTime = options.currentTime;
+        this.remotePlayerController.seek();
     }
     async mediaNext() {
-        throw new Error('Web implementation not available');
+        var _a;
+        const session = (_a = this.context) === null || _a === void 0 ? void 0 : _a.getCurrentSession();
+        const mediaSession = session === null || session === void 0 ? void 0 : session.getMediaSession();
+        if (!mediaSession) {
+            throw new Error('No active media session');
+        }
+        return new Promise((resolve, reject) => {
+            mediaSession.queueNext(() => resolve(), (error) => reject(new Error(error.description || 'Failed to skip to next')));
+        });
     }
     async mediaPrev() {
-        throw new Error('Web implementation not available');
+        var _a;
+        const session = (_a = this.context) === null || _a === void 0 ? void 0 : _a.getCurrentSession();
+        const mediaSession = session === null || session === void 0 ? void 0 : session.getMediaSession();
+        if (!mediaSession) {
+            throw new Error('No active media session');
+        }
+        return new Promise((resolve, reject) => {
+            mediaSession.queuePrev(() => resolve(), (error) => reject(new Error(error.description || 'Failed to go to previous')));
+        });
     }
     async sessionStop() {
         if (this.context) {
@@ -172,13 +263,19 @@ export class ChromecastWeb extends WebPlugin {
         }
     }
     async startRouteScan(_options) {
-        throw new Error('Web implementation not available');
+        // Web Cast SDK does not support programmatic device scanning.
+        // Device discovery is handled automatically by the browser's Cast button.
+        // Return empty routes - use requestSession() to show the device picker.
+        return { routes: [] };
     }
     async stopRouteScan() {
-        throw new Error('Web implementation not available');
+        // Web Cast SDK does not support programmatic device scanning.
+        // This is a no-op on web.
     }
     async selectRoute(_options) {
-        throw new Error('Web implementation not available');
+        // Web Cast SDK does not support programmatic device selection.
+        // Use requestSession() to show the device picker dialog instead.
+        throw new Error('Programmatic device selection is not supported on web. Use requestSession() to show the device picker.');
     }
     async sendMessage(options) {
         var _a;
@@ -238,6 +335,76 @@ export class ChromecastWeb extends WebPlugin {
             },
             media: [],
         };
+    }
+    createMediaObject(mediaSession, sessionId) {
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
+        if (!mediaSession) {
+            return {
+                currentItemId: 0,
+                currentTime: 0,
+                customData: {},
+                mediaSessionId: 0,
+                playbackRate: 1,
+                playerState: 'UNKNOWN',
+                isAlive: false,
+                volume: { level: 1, muted: false },
+                sessionId,
+            };
+        }
+        const { PlayerState, IdleReason } = window.chrome.cast.media;
+        const playerStateMap = {
+            [PlayerState.IDLE]: 'IDLE',
+            [PlayerState.PLAYING]: 'PLAYING',
+            [PlayerState.PAUSED]: 'PAUSED',
+            [PlayerState.BUFFERING]: 'BUFFERING',
+        };
+        const idleReasonMap = {
+            [IdleReason.CANCELLED]: 'CANCELLED',
+            [IdleReason.ERROR]: 'ERROR',
+            [IdleReason.FINISHED]: 'FINISHED',
+            [IdleReason.INTERRUPTED]: 'INTERRUPTED',
+        };
+        const mediaInfo = mediaSession.media;
+        const result = {
+            currentItemId: mediaSession.currentItemId || 0,
+            currentTime: (_c = (_b = (_a = mediaSession.getEstimatedTime) === null || _a === void 0 ? void 0 : _a.call(mediaSession)) !== null && _b !== void 0 ? _b : mediaSession.currentTime) !== null && _c !== void 0 ? _c : 0,
+            customData: mediaSession.customData || {},
+            mediaSessionId: mediaSession.mediaSessionId || 0,
+            playbackRate: mediaSession.playbackRate || 1,
+            playerState: playerStateMap[mediaSession.playerState] || 'UNKNOWN',
+            isAlive: mediaSession.playerState !== PlayerState.IDLE,
+            volume: {
+                level: (_g = (_e = (_d = mediaSession.volume) === null || _d === void 0 ? void 0 : _d.level) !== null && _e !== void 0 ? _e : (_f = this.remotePlayer) === null || _f === void 0 ? void 0 : _f.volumeLevel) !== null && _g !== void 0 ? _g : 1,
+                muted: (_l = (_j = (_h = mediaSession.volume) === null || _h === void 0 ? void 0 : _h.muted) !== null && _j !== void 0 ? _j : (_k = this.remotePlayer) === null || _k === void 0 ? void 0 : _k.isMuted) !== null && _l !== void 0 ? _l : false,
+            },
+            sessionId,
+        };
+        if (mediaSession.idleReason) {
+            result.idleReason = idleReasonMap[mediaSession.idleReason];
+        }
+        if (mediaInfo) {
+            const streamTypeMap = {
+                [window.chrome.cast.media.StreamType.BUFFERED]: 'BUFFERED',
+                [window.chrome.cast.media.StreamType.LIVE]: 'LIVE',
+                [window.chrome.cast.media.StreamType.OTHER]: 'OTHER',
+            };
+            result.media = {
+                contentId: mediaInfo.contentId,
+                contentType: mediaInfo.contentType,
+                customData: mediaInfo.customData || {},
+                duration: (_m = mediaInfo.duration) !== null && _m !== void 0 ? _m : 0,
+                streamType: streamTypeMap[mediaInfo.streamType] || 'BUFFERED',
+            };
+            if (mediaInfo.metadata) {
+                result.media.metadata = {
+                    metadataType: mediaInfo.metadata.metadataType,
+                    title: mediaInfo.metadata.title,
+                    subtitle: mediaInfo.metadata.subtitle,
+                    images: (_o = mediaInfo.metadata.images) === null || _o === void 0 ? void 0 : _o.map(img => ({ url: img.url })),
+                };
+            }
+        }
+        return result;
     }
 }
 //# sourceMappingURL=web.js.map
