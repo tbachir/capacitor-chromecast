@@ -11,7 +11,7 @@
     "android/build.gradle",
     "dist/",
     "ios/Plugin/",
-    "CapacitorChromecast.podspec"
+    "GameleapCapacitorChromecast.podspec"
   ],
   "author": "Dimitar Todorov",
   "license": "MIT",
@@ -69,8 +69,7 @@
   "swiftlint": "@ionic/swiftlint-config",
   "capacitor": {
     "ios": {
-      "src": "ios",
-      "podspec": "CapacitorChromecast.podspec"
+      "src": "ios"
     },
     "android": {
       "src": "android"
