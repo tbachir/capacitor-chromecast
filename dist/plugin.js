@@ -279,7 +279,7 @@ var capacitorChromecast = (function (exports, core) {
                 throw new Error('No active media session');
             }
             return new Promise((resolve, reject) => {
-                mediaSession.queueNext(() => resolve(), (error) => reject(new Error(error.description || 'Failed to skip to next')));
+                mediaSession.queueNext(() => resolve(), error => reject(new Error(error.description || 'Failed to skip to next')));
             });
         }
         async mediaPrev() {
@@ -290,7 +290,7 @@ var capacitorChromecast = (function (exports, core) {
                 throw new Error('No active media session');
             }
             return new Promise((resolve, reject) => {
-                mediaSession.queuePrev(() => resolve(), (error) => reject(new Error(error.description || 'Failed to go to previous')));
+                mediaSession.queuePrev(() => resolve(), error => reject(new Error(error.description || 'Failed to go to previous')));
             });
         }
         async sessionStop() {

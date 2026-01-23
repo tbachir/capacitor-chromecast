@@ -43,7 +43,9 @@ declare global {
           PLAYER_STATE_CHANGED: string;
         };
         RemotePlayer: new () => RemotePlayer;
-        RemotePlayerController: new (player: RemotePlayer) => RemotePlayerController;
+        RemotePlayerController: new (
+          player: RemotePlayer,
+        ) => RemotePlayerController;
       };
     };
     chrome: {
@@ -54,7 +56,10 @@ declare global {
           PAGE_SCOPED: string;
         };
         media: {
-          MediaInfo: new (contentId: string, contentType: string) => ChromeMediaInfo;
+          MediaInfo: new (
+            contentId: string,
+            contentType: string,
+          ) => ChromeMediaInfo;
           LoadRequest: new (mediaInfo: ChromeMediaInfo) => ChromeLoadRequest;
           GenericMediaMetadata: new () => ChromeGenericMediaMetadata;
           TextTrackStyle: new () => ChromeTextTrackStyle;
@@ -115,6 +120,14 @@ declare global {
     url: string;
   }
 
+  interface ChromeCastError {
+    code: string;
+    description: string | null;
+    details: object | null;
+  }
+
+  type ChromeCastErrorCode = string;
+
   interface CastContext {
     setOptions(options: {
       receiverApplicationId: string;
@@ -148,7 +161,9 @@ declare global {
       namespace: string,
       listener: (namespace: string, message: string) => void,
     ): void;
-    loadMedia(loadRequest: ChromeLoadRequest): Promise<chrome.cast.ErrorCode | null>;
+    loadMedia(
+      loadRequest: ChromeLoadRequest,
+    ): Promise<ChromeCastErrorCode | null>;
     getMediaSession(): ChromeMediaSession | null;
   }
 
@@ -165,20 +180,12 @@ declare global {
     getEstimatedTime(): number;
     queueNext(
       successCallback?: () => void,
-      errorCallback?: (error: chrome.cast.Error) => void,
+      errorCallback?: (error: ChromeCastError) => void,
     ): void;
     queuePrev(
       successCallback?: () => void,
-      errorCallback?: (error: chrome.cast.Error) => void,
+      errorCallback?: (error: ChromeCastError) => void,
     ): void;
-  }
-
-  namespace chrome.cast {
-    interface Error {
-      code: string;
-      description: string | null;
-      details: object | null;
-    }
   }
 
   interface RemotePlayer {
@@ -200,10 +207,6 @@ declare global {
     muteOrUnmute(): void;
     addEventListener(type: string, handler: (event: unknown) => void): void;
     removeEventListener(type: string, handler: (event: unknown) => void): void;
-  }
-
-  namespace chrome.cast {
-    type ErrorCode = string;
   }
 
   interface CastStateEvent {
@@ -353,7 +356,9 @@ export class ChromecastWeb
 
     // Initialize RemotePlayer and RemotePlayerController for media control
     this.remotePlayer = new window.cast.framework.RemotePlayer();
-    this.remotePlayerController = new window.cast.framework.RemotePlayerController(this.remotePlayer);
+    this.remotePlayerController = new window.cast.framework.RemotePlayerController(
+      this.remotePlayer,
+    );
   }
 
   private setupMessageListenersForSession(session: CastSession | null): void {
@@ -550,7 +555,8 @@ export class ChromecastWeb
     return new Promise((resolve, reject) => {
       mediaSession.queueNext(
         () => resolve(),
-        (error) => reject(new Error(error.description || 'Failed to skip to next')),
+        error =>
+          reject(new Error(error.description || 'Failed to skip to next')),
       );
     });
   }
@@ -564,7 +570,8 @@ export class ChromecastWeb
     return new Promise((resolve, reject) => {
       mediaSession.queuePrev(
         () => resolve(),
-        (error) => reject(new Error(error.description || 'Failed to go to previous')),
+        error =>
+          reject(new Error(error.description || 'Failed to go to previous')),
       );
     });
   }
@@ -707,15 +714,18 @@ export class ChromecastWeb
     const mediaInfo = mediaSession.media;
     const result: MediaObject = {
       currentItemId: mediaSession.currentItemId || 0,
-      currentTime: mediaSession.getEstimatedTime?.() ?? mediaSession.currentTime ?? 0,
+      currentTime:
+        mediaSession.getEstimatedTime?.() ?? mediaSession.currentTime ?? 0,
       customData: mediaSession.customData || {},
       mediaSessionId: mediaSession.mediaSessionId || 0,
       playbackRate: mediaSession.playbackRate || 1,
       playerState: playerStateMap[mediaSession.playerState] || 'UNKNOWN',
       isAlive: mediaSession.playerState !== PlayerState.IDLE,
       volume: {
-        level: mediaSession.volume?.level ?? this.remotePlayer?.volumeLevel ?? 1,
-        muted: mediaSession.volume?.muted ?? this.remotePlayer?.isMuted ?? false,
+        level:
+          mediaSession.volume?.level ?? this.remotePlayer?.volumeLevel ?? 1,
+        muted:
+          mediaSession.volume?.muted ?? this.remotePlayer?.isMuted ?? false,
       },
       sessionId,
     };

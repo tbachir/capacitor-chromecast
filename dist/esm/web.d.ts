@@ -97,6 +97,12 @@ declare global {
     interface ChromeImage {
         url: string;
     }
+    interface ChromeCastError {
+        code: string;
+        description: string | null;
+        details: object | null;
+    }
+    type ChromeCastErrorCode = string;
     interface CastContext {
         setOptions(options: {
             receiverApplicationId: string;
@@ -123,7 +129,7 @@ declare global {
         sendMessage(namespace: string, message: unknown): Promise<void>;
         addMessageListener(namespace: string, listener: (namespace: string, message: string) => void): void;
         removeMessageListener(namespace: string, listener: (namespace: string, message: string) => void): void;
-        loadMedia(loadRequest: ChromeLoadRequest): Promise<chrome.cast.ErrorCode | null>;
+        loadMedia(loadRequest: ChromeLoadRequest): Promise<ChromeCastErrorCode | null>;
         getMediaSession(): ChromeMediaSession | null;
     }
     interface ChromeMediaSession {
@@ -140,15 +146,8 @@ declare global {
             muted: boolean;
         };
         getEstimatedTime(): number;
-        queueNext(successCallback?: () => void, errorCallback?: (error: chrome.cast.Error) => void): void;
-        queuePrev(successCallback?: () => void, errorCallback?: (error: chrome.cast.Error) => void): void;
-    }
-    namespace chrome.cast {
-        interface Error {
-            code: string;
-            description: string | null;
-            details: object | null;
-        }
+        queueNext(successCallback?: () => void, errorCallback?: (error: ChromeCastError) => void): void;
+        queuePrev(successCallback?: () => void, errorCallback?: (error: ChromeCastError) => void): void;
     }
     interface RemotePlayer {
         isConnected: boolean;
@@ -168,9 +167,6 @@ declare global {
         muteOrUnmute(): void;
         addEventListener(type: string, handler: (event: unknown) => void): void;
         removeEventListener(type: string, handler: (event: unknown) => void): void;
-    }
-    namespace chrome.cast {
-        type ErrorCode = string;
     }
     interface CastStateEvent {
         castState: string;
