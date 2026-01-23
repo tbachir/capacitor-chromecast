@@ -8,10 +8,13 @@ import com.google.android.gms.cast.MediaStatus;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
 
 /**
  * Unit tests for ChromecastUtilities.
  */
+@RunWith(RobolectricTestRunner.class)
 public class ChromecastUtilitiesTest {
 
     // ==================== getMediaIdleReason Tests ====================
