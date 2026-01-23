@@ -251,6 +251,22 @@
         "slug": "addmessagelistener"
       },
       {
+        "name": "removeMessageListener",
+        "signature": "(options: { namespace: string; }) => Promise<void>",
+        "parameters": [
+          {
+            "name": "options",
+            "docs": "",
+            "type": "{ namespace: string; }"
+          }
+        ],
+        "returns": "Promise<void>",
+        "tags": [],
+        "docs": "Remove a message listener for a specific namespace.",
+        "complexTypes": [],
+        "slug": "removemessagelistener"
+      },
+      {
         "name": "networkDiagnostic",
         "signature": "() => Promise<NetworkDiagnosticResult>",
         "parameters": [],

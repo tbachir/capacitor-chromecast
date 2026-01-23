@@ -183,6 +183,12 @@ export interface ChromecastPlugin {
         namespace: string;
     }): Promise<void>;
     /**
+     * Remove a message listener for a specific namespace.
+     */
+    removeMessageListener(options: {
+        namespace: string;
+    }): Promise<void>;
+    /**
      * Get network diagnostic information.
      */
     networkDiagnostic(): Promise<NetworkDiagnosticResult>;

@@ -219,6 +219,9 @@ export declare class ChromecastWeb extends WebPlugin implements Omit<ChromecastP
     addMessageListener(options: {
         namespace: string;
     }): Promise<void>;
+    removeMessageListener(options: {
+        namespace: string;
+    }): Promise<void>;
     networkDiagnostic(): Promise<NetworkDiagnosticResult>;
     private createSessionObject;
     private createMediaObject;

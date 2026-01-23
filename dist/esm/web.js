@@ -338,6 +338,15 @@ export class ChromecastWeb extends WebPlugin {
             session.addMessageListener(options.namespace, listener);
         }
     }
+    async removeMessageListener(options) {
+        var _a;
+        const session = (_a = this.context) === null || _a === void 0 ? void 0 : _a.getCurrentSession();
+        const listener = this.messageListeners.get(options.namespace);
+        if (session && listener) {
+            session.removeMessageListener(options.namespace, listener);
+        }
+        this.messageListeners.delete(options.namespace);
+    }
     async networkDiagnostic() {
         return {
             networkConnected: navigator.onLine,

@@ -30,6 +30,7 @@ npx cap sync
 * [`selectRoute(...)`](#selectroute)
 * [`sendMessage(...)`](#sendmessage)
 * [`addMessageListener(...)`](#addmessagelistener)
+* [`removeMessageListener(...)`](#removemessagelistener)
 * [`networkDiagnostic()`](#networkdiagnostic)
 * [`addListener(string, ...)`](#addlistenerstring-)
 * [Interfaces](#interfaces)
@@ -271,6 +272,21 @@ addMessageListener(options: { namespace: string; }) => Promise<void>
 ```
 
 Add a listener for messages from the receiver on a specific namespace.
+
+| Param         | Type                                |
+| ------------- | ----------------------------------- |
+| **`options`** | <code>{ namespace: string; }</code> |
+
+--------------------
+
+
+### removeMessageListener(...)
+
+```typescript
+removeMessageListener(options: { namespace: string; }) => Promise<void>
+```
+
+Remove a message listener for a specific namespace.
 
 | Param         | Type                                |
 | ------------- | ----------------------------------- |
