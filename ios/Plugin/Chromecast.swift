@@ -483,11 +483,12 @@ enum ChromecastError: Error, LocalizedError {
             }
 
             // Send message via channel
-            do {
-                try channel.sendTextMessage(message)
-                completion(.success(true))
-            } catch {
+            var error: NSError?
+            channel.sendTextMessage(message, error: &error)
+            if let error = error {
                 completion(.failure(ChromecastError.sessionError("Failed to send message: \(error.localizedDescription)")))
+            } else {
+                completion(.success(true))
             }
         }
     }
