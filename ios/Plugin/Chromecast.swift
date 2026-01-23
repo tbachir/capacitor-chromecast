@@ -483,11 +483,11 @@ enum ChromecastError: Error, LocalizedError {
             }
 
             // Send message via channel
-            let requestId = channel.sendTextMessage(message)
-            if requestId == kGCKInvalidRequestID {
-                completion(.failure(ChromecastError.sessionError("Failed to send message")))
-            } else {
+            do {
+                try channel.sendTextMessage(message)
                 completion(.success(true))
+            } catch {
+                completion(.failure(ChromecastError.sessionError("Failed to send message: \(error.localizedDescription)")))
             }
         }
     }
