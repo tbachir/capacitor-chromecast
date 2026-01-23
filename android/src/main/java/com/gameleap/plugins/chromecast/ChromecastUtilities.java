@@ -2,10 +2,8 @@ package com.gameleap.plugins.chromecast;
 
 import android.graphics.Color;
 import android.net.Uri;
-
 import androidx.annotation.NonNull;
 import androidx.mediarouter.media.MediaRouter;
-
 import com.google.android.gms.cast.ApplicationMetadata;
 import com.google.android.gms.cast.CastDevice;
 import com.google.android.gms.cast.MediaInfo;
@@ -17,17 +15,16 @@ import com.google.android.gms.cast.MediaTrack;
 import com.google.android.gms.cast.TextTrackStyle;
 import com.google.android.gms.cast.framework.CastSession;
 import com.google.android.gms.common.images.WebImage;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 final class ChromecastUtilities {
+
     /** Stores a cache of the queueItems for building Media Objects. */
     private static JSONArray queueItems = null;
 
@@ -403,8 +400,7 @@ final class ChromecastUtilities {
             if (!textTrackSytle.isNull("foregroundColor")) {
                 out.setForegroundColor(Color.parseColor(textTrackSytle.getString("foregroundColor")));
             }
-        } catch (JSONException e) {
-        }
+        } catch (JSONException e) {}
 
         return out;
     }
@@ -418,8 +414,7 @@ final class ChromecastUtilities {
         if (state != null) {
             try {
                 s.put("status", state);
-            } catch (JSONException e) {
-            }
+            } catch (JSONException e) {}
         }
         return s;
     }
@@ -432,17 +427,12 @@ final class ChromecastUtilities {
             out.put("appId", metadata.getApplicationId());
             try {
                 out.put("appImages", createImagesArray(metadata.getImages()));
-            } catch (NullPointerException e) {
-            }
+            } catch (NullPointerException e) {}
             out.put("displayName", metadata.getName());
             out.put("media", createMediaArray(session));
             out.put("receiver", createReceiverObject(session));
             out.put("sessionId", session.getSessionId());
-
-        } catch (JSONException e) {
-        } catch (NullPointerException e) {
-        } catch (IllegalStateException e) {
-        }
+        } catch (JSONException e) {} catch (NullPointerException e) {} catch (IllegalStateException e) {}
 
         return out;
     }
@@ -468,13 +458,9 @@ final class ChromecastUtilities {
             try {
                 volume.put("level", session.getVolume());
                 volume.put("muted", session.isMute());
-            } catch (JSONException e) {
-            }
+            } catch (JSONException e) {}
             out.put("volume", volume);
-
-        } catch (JSONException e) {
-        } catch (NullPointerException e) {
-        }
+        } catch (JSONException e) {} catch (NullPointerException e) {}
         return out;
     }
 
@@ -489,7 +475,7 @@ final class ChromecastUtilities {
 
     static JSONObject createMediaObject(CastSession session) {
         return createMediaObject(session, queueItems);
-    };
+    }
 
     static JSONObject createMediaObject(CastSession session, JSONArray items) {
         JSONObject out = new JSONObject();
@@ -528,8 +514,7 @@ final class ChromecastUtilities {
             volume.put("muted", mediaStatus.isMute());
             out.put("volume", volume);
             out.put("activeTrackIds", createActiveTrackIds(mediaStatus.getActiveTrackIds()));
-        } catch (JSONException e) {
-        } catch (NullPointerException e) {
+        } catch (JSONException e) {} catch (NullPointerException e) {
             return null;
         }
 
@@ -606,7 +591,6 @@ final class ChromecastUtilities {
             for (MediaTrack track : mediaInfo.getMediaTracks()) {
                 JSONObject jsonTrack = new JSONObject();
 
-
                 // TODO: Missing attributes are commented out.
                 //  These are returned by the chromecast desktop SDK, we should probbaly return them too
 
@@ -621,9 +605,7 @@ final class ChromecastUtilities {
 
                 out.put(jsonTrack);
             }
-        } catch (JSONException e) {
-        } catch (NullPointerException e) {
-        }
+        } catch (JSONException e) {} catch (NullPointerException e) {}
 
         return out;
     }
@@ -645,10 +627,7 @@ final class ChromecastUtilities {
             out.put("streamType", ChromecastUtilities.getMediaInfoStreamType(mediaInfo));
             out.put("tracks", createMediaInfoTracks(mediaInfo));
             out.put("textTrackStyle", ChromecastUtilities.createTextTrackObject(mediaInfo.getTextTrackStyle()));
-
-        } catch (JSONException e) {
-        } catch (NullPointerException e) {
-        }
+        } catch (JSONException e) {} catch (NullPointerException e) {}
 
         return out;
     }
@@ -662,8 +641,7 @@ final class ChromecastUtilities {
             try {
                 // Must be in own try catch
                 out.put("images", createImagesArray(metadata.getImages()));
-            } catch (Exception e) {
-            }
+            } catch (Exception e) {}
             out.put("metadataType", metadata.getMediaType());
             out.put("type", metadata.getMediaType());
 
@@ -730,8 +708,7 @@ final class ChromecastUtilities {
             out.put("windowColor", getHexColor(textTrackStyle.getWindowColor()));
             out.put("windowRoundedCornerRadius", textTrackStyle.getWindowCornerRadius());
             out.put("windowType", getWindowType(textTrackStyle));
-        } catch (JSONException e) {
-        }
+        } catch (JSONException e) {}
 
         return out;
     }
@@ -752,12 +729,11 @@ final class ChromecastUtilities {
                 CastDevice device = CastDevice.getFromBundle(route.getExtras());
                 if (device != null) {
                     obj.put("isNearbyDevice", !device.isOnLocalNetwork());
-                    obj.put("isCastGroup", route instanceof MediaRouter.RouteGroup);
+                    obj.put("isCastGroup", route.isGroup());
                 }
 
                 routesArray.put(obj);
-            } catch (JSONException e) {
-            }
+            } catch (JSONException e) {}
         }
         return routesArray;
     }
@@ -767,12 +743,11 @@ final class ChromecastUtilities {
         try {
             out.put("code", code);
             out.put("description", message);
-        } catch (JSONException e) {
-        }
+        } catch (JSONException e) {}
         return out;
     }
 
-/* -------------------   Create NON-JSON (non-output) Objects  ---------------------------------- */
+    /* -------------------   Create NON-JSON (non-output) Objects  ---------------------------------- */
 
     /**
      * Creates a MediaQueueItem from a JSONObject representation of a MediaQueueItem.
@@ -792,29 +767,23 @@ final class ChromecastUtilities {
                 activeTrackIds[i] = trackIds.getLong(i);
             }
             builder.setActiveTrackIds(activeTrackIds);
-        } catch (JSONException e) {
-        }
+        } catch (JSONException e) {}
         try {
             builder.setAutoplay(mediaQueueItem.getBoolean("autoplay"));
-        } catch (JSONException e) {
-        }
+        } catch (JSONException e) {}
         JSONObject customData = new JSONObject();
         try {
             customData.getJSONObject("customData");
-        } catch (JSONException e) {
-        }
+        } catch (JSONException e) {}
         try {
             builder.setPlaybackDuration(mediaQueueItem.getDouble("playbackDuration"));
-        } catch (JSONException e) {
-        }
+        } catch (JSONException e) {}
         try {
             builder.setPreloadTime(mediaQueueItem.getDouble("preloadTime"));
-        } catch (JSONException e) {
-        }
+        } catch (JSONException e) {}
         try {
             builder.setStartTime(mediaQueueItem.getDouble("startTime"));
-        } catch (JSONException e) {
-        }
+        } catch (JSONException e) {}
         return builder.build();
     }
 
@@ -831,37 +800,38 @@ final class ChromecastUtilities {
         // Try to get the actual values
         try {
             contentId = mediaInfo.getString("contentId");
-        } catch (JSONException e) {
-        }
+        } catch (JSONException e) {}
         try {
             customData = mediaInfo.getJSONObject("customData");
-        } catch (JSONException e) {
-        }
+        } catch (JSONException e) {}
         try {
             contentType = mediaInfo.getString("contentType");
-        } catch (JSONException e) {
-        }
+        } catch (JSONException e) {}
         try {
             duration = mediaInfo.getLong("duration");
-        } catch (JSONException e) {
-        }
+        } catch (JSONException e) {}
         try {
             streamType = mediaInfo.getString("streamType");
-        } catch (JSONException e) {
-        }
+        } catch (JSONException e) {}
         try {
             metadata = mediaInfo.getJSONObject("metadata");
-        } catch (JSONException e) {
-        }
+        } catch (JSONException e) {}
         try {
             textTrackStyle = mediaInfo.getJSONObject("textTrackStyle");
-        } catch (JSONException e) {
-        }
+        } catch (JSONException e) {}
 
         return createMediaInfo(contentId, customData, contentType, duration, streamType, metadata, textTrackStyle);
     }
 
-    static MediaInfo createMediaInfo(String contentId, JSONObject customData, String contentType, long duration, String streamType, JSONObject metadata, JSONObject textTrackStyle) {
+    static MediaInfo createMediaInfo(
+        String contentId,
+        JSONObject customData,
+        String contentType,
+        long duration,
+        String streamType,
+        JSONObject metadata,
+        JSONObject textTrackStyle
+    ) {
         MediaInfo.Builder mediaInfoBuilder = new MediaInfo.Builder(contentId);
 
         mediaInfoBuilder.setMetadata(createMediaMetadata(metadata));
@@ -881,17 +851,16 @@ final class ChromecastUtilities {
         TextTrackStyle trackStyle = ChromecastUtilities.parseTextTrackStyle(textTrackStyle);
 
         mediaInfoBuilder
-                .setContentType(contentType)
-                .setCustomData(customData)
-                .setStreamType(intStreamType)
-                .setStreamDuration(duration)
-                .setTextTrackStyle(trackStyle);
+            .setContentType(contentType)
+            .setCustomData(customData)
+            .setStreamType(intStreamType)
+            .setStreamDuration(duration)
+            .setTextTrackStyle(trackStyle);
 
         return mediaInfoBuilder.build();
     }
 
     private static MediaMetadata createMediaMetadata(JSONObject metadata) {
-
         MediaMetadata mediaMetadata;
         try {
             mediaMetadata = new MediaMetadata(metadata.getInt("metadataType"));
@@ -906,11 +875,9 @@ final class ChromecastUtilities {
                 try {
                     Uri imageURI = Uri.parse(imageObj.getString("url"));
                     mediaMetadata.addImage(new WebImage(imageURI));
-                } catch (Exception e) {
-                }
+                } catch (Exception e) {}
             }
-        } catch (JSONException e) {
-        }
+        } catch (JSONException e) {}
 
         // Dynamically add other parameters
         Iterator<String> keys = metadata.keys();
@@ -919,9 +886,7 @@ final class ChromecastUtilities {
         Object value;
         while (keys.hasNext()) {
             key = keys.next();
-            if (key.equals("metadataType")
-                    || key.equals("images")
-                    || key.equals("type")) {
+            if (key.equals("metadataType") || key.equals("images") || key.equals("type")) {
                 continue;
             }
             try {
@@ -940,10 +905,12 @@ final class ChromecastUtilities {
                         break;
                     case "date":
                         GregorianCalendar c = new GregorianCalendar();
-                        if (value instanceof java.lang.Integer
-                                || value instanceof java.lang.Long
-                                || value instanceof java.lang.Float
-                                || value instanceof java.lang.Double) {
+                        if (
+                            value instanceof java.lang.Integer ||
+                            value instanceof java.lang.Long ||
+                            value instanceof java.lang.Float ||
+                            value instanceof java.lang.Double
+                        ) {
                             c.setTimeInMillis(metadata.getLong(key));
                             mediaMetadata.putDate(convertedKey, c);
                         } else {
@@ -953,9 +920,10 @@ final class ChromecastUtilities {
                             } catch (JSONException e) {
                                 stringValue = "";
                             }
-                            new Error("Cannot date from metadata key: " + key + stringValue
-                                    + "\n Dates must be in milliseconds from epoch UTC")
-                                    .printStackTrace();
+                            new Error(
+                                "Cannot date from metadata key: " + key + stringValue + "\n Dates must be in milliseconds from epoch UTC"
+                            )
+                                .printStackTrace();
                         }
                         break;
                     case "ms":
@@ -980,7 +948,6 @@ final class ChromecastUtilities {
                 e.printStackTrace();
             }
         }
-        return  mediaMetadata;
+        return mediaMetadata;
     }
-
 }
