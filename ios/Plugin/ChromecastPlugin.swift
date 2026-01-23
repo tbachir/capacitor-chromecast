@@ -5,6 +5,12 @@ import GoogleCast
 @objc(ChromecastPlugin)
 public class ChromecastPlugin: CAPPlugin, ChromecastListener {
 
+    // MARK: - Lifecycle
+    public override func load() {
+        print("🔴🔴🔴 ChromecastPlugin LOADED 🔴🔴🔴")
+        super.load()
+    }
+
     // MARK: - Properties
     private var implementation: Chromecast?
     private var isInitialized = false
@@ -25,6 +31,7 @@ public class ChromecastPlugin: CAPPlugin, ChromecastListener {
     // MARK: - Plugin Methods
 
     @objc func initialize(_ call: CAPPluginCall) {
+        print("🔴🔴🔴 ChromecastPlugin initialize() called 🔴🔴🔴")
         let appId = call.getString("appId")
 
         // Ensure main thread execution
@@ -47,7 +54,9 @@ public class ChromecastPlugin: CAPPlugin, ChromecastListener {
     }
 
     @objc func requestSession(_ call: CAPPluginCall) {
+        print("🔴🔴🔴 ChromecastPlugin requestSession() called 🔴🔴🔴")
         guard let implementation = implementation, isInitialized else {
+            print("🔴🔴🔴 ChromecastPlugin not initialized! 🔴🔴🔴")
             call.reject("Plugin not initialized")
             return
         }
