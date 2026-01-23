@@ -113,7 +113,7 @@ enum ChromecastError: Error, LocalizedError {
     }
 
     // MARK: - Session Management
-    @objc public func requestSession(completion: @escaping (Result<[String: Any], Error>) -> Void) {
+    public func requestSession(completion: @escaping (Result<[String: Any], Error>) -> Void) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else {
                 completion(.failure(ChromecastError.notInitialized))
@@ -134,7 +134,7 @@ enum ChromecastError: Error, LocalizedError {
         }
     }
 
-    @objc public func selectRoute(routeId: String, completion: @escaping (Result<[String: Any], Error>) -> Void) {
+    public func selectRoute(routeId: String, completion: @escaping (Result<[String: Any], Error>) -> Void) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self,
                   let discoveryManager = self.discoveryManager else {
@@ -287,7 +287,7 @@ enum ChromecastError: Error, LocalizedError {
         }
     }
 
-    @objc public func loadMedia(
+    public func loadMedia(
         contentId: String,
         customData: [String: Any]?,
         contentType: String?,
@@ -363,7 +363,7 @@ enum ChromecastError: Error, LocalizedError {
     }
 
     /// Load media with authentication headers
-    @objc public func loadMediaWithHeaders(
+    public func loadMediaWithHeaders(
         contentId: String,
         customData: [String: Any]?,
         contentType: String?,
@@ -459,7 +459,7 @@ enum ChromecastError: Error, LocalizedError {
     private var messageNamespaces: Set<String> = []
 
     /// Send a custom message to the receiver
-    @objc public func sendMessage(namespace: String, message: String, completion: @escaping (Result<Bool, Error>) -> Void) {
+    public func sendMessage(namespace: String, message: String, completion: @escaping (Result<Bool, Error>) -> Void) {
         DispatchQueue.main.async { [weak self] in
             guard let session = self?.currentSession else {
                 completion(.failure(ChromecastError.noSession))
