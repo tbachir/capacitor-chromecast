@@ -382,16 +382,50 @@ export class ChromecastWeb
     return this.createSessionObject(session);
   }
 
-  async launchMedia(_options: {
+  async launchMedia(options: {
     mediaUrl: string;
   }): Promise<{ success: boolean }> {
-    if (!this.context?.getCurrentSession()) {
+    const session = this.context?.getCurrentSession();
+    if (!session) {
       throw new Error('No active session');
     }
 
-    // For custom apps, use sendMessage instead of media loading
-    // This is a simplified implementation
+    const contentType = this.detectContentType(options.mediaUrl);
+
+    const mediaInfo = new window.chrome.cast.media.MediaInfo(
+      options.mediaUrl,
+      contentType,
+    );
+    mediaInfo.streamType = window.chrome.cast.media.StreamType.BUFFERED;
+
+    const loadRequest = new window.chrome.cast.media.LoadRequest(mediaInfo);
+    loadRequest.autoplay = true;
+    loadRequest.currentTime = 0;
+
+    const error = await session.loadMedia(loadRequest);
+    if (error) {
+      throw new Error(`Failed to load media: ${error}`);
+    }
+
     return { success: true };
+  }
+
+  private detectContentType(url: string): string {
+    const urlWithoutQuery = url.toLowerCase().split('?')[0];
+
+    if (urlWithoutQuery.endsWith('.m3u8')) {
+      return 'application/x-mpegURL';
+    } else if (urlWithoutQuery.endsWith('.mpd')) {
+      return 'application/dash+xml';
+    } else if (urlWithoutQuery.endsWith('.mp4')) {
+      return 'video/mp4';
+    } else if (urlWithoutQuery.endsWith('.webm')) {
+      return 'video/webm';
+    } else if (urlWithoutQuery.endsWith('.mkv')) {
+      return 'video/x-matroska';
+    }
+
+    return 'video/mp4';
   }
 
   async loadMedia(options: LoadMediaOptions): Promise<MediaObject> {

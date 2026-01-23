@@ -190,11 +190,12 @@ export declare class ChromecastWeb extends WebPlugin implements Omit<ChromecastP
     private setupCastContext;
     private setupMessageListenersForSession;
     requestSession(): Promise<SessionObject>;
-    launchMedia(_options: {
+    launchMedia(options: {
         mediaUrl: string;
     }): Promise<{
         success: boolean;
     }>;
+    private detectContentType;
     loadMedia(options: LoadMediaOptions): Promise<MediaObject>;
     loadMediaWithHeaders(options: LoadMediaWithHeadersOptions): Promise<MediaObject>;
     mediaPause(): Promise<void>;
