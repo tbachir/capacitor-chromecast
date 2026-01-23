@@ -407,7 +407,7 @@ public class ChromecastSession {
      */
     public void mediaPlay(final CallbackContext callback) {
         if (client == null || session == null) {
-            callback.reject("session_error");
+            callback.error("session_error");
             return;
         }
         activity.runOnUiThread(
@@ -425,7 +425,7 @@ public class ChromecastSession {
      */
     public void mediaPause(final CallbackContext callback) {
         if (client == null || session == null) {
-            callback.reject("session_error");
+            callback.error("session_error");
             return;
         }
         activity.runOnUiThread(
@@ -445,7 +445,7 @@ public class ChromecastSession {
      */
     public void mediaSeek(final long seekPosition, final String resumeState, final CallbackContext callback) {
         if (client == null || session == null) {
-            callback.reject("session_error");
+            callback.error("session_error");
             return;
         }
         activity.runOnUiThread(
@@ -479,7 +479,7 @@ public class ChromecastSession {
      */
     public void mediaSetVolume(final Double level, final Boolean muted, final CallbackContext callback) {
         if (client == null || session == null) {
-            callback.reject("session_error");
+            callback.error("session_error");
             return;
         }
         activity.runOnUiThread(
@@ -495,7 +495,7 @@ public class ChromecastSession {
                     }
                     if (calls == 0) {
                         // No change
-                        callback.resolve();
+                        callback.success();
                         return;
                     }
 
@@ -510,9 +510,9 @@ public class ChromecastSession {
                             if (callsCompleted >= expectedCalls) {
                                 // Both the setvolume an setMute have returned
                                 if (finalErr != null) {
-                                    callback.reject(finalErr);
+                                    callback.error(finalErr);
                                 } else {
-                                    callback.resolve();
+                                    callback.success();
                                 }
                             }
                         }
@@ -549,7 +549,7 @@ public class ChromecastSession {
      */
     public void mediaStop(final CallbackContext callback) {
         if (client == null || session == null) {
-            callback.reject("session_error");
+            callback.error("session_error");
             return;
         }
         activity.runOnUiThread(
@@ -569,7 +569,7 @@ public class ChromecastSession {
      */
     public void mediaEditTracksInfo(final long[] activeTracksIds, final JSONObject textTrackStyle, final CallbackContext callback) {
         if (client == null || session == null) {
-            callback.reject("session_error");
+            callback.error("session_error");
             return;
         }
         activity.runOnUiThread(
@@ -748,7 +748,7 @@ public class ChromecastSession {
      */
     public void queueLoad(final JSONObject queueLoadRequest, final CallbackContext callback) {
         if (client == null || session == null) {
-            callback.reject("session_error");
+            callback.error("session_error");
             return;
         }
         activity.runOnUiThread(
@@ -773,7 +773,7 @@ public class ChromecastSession {
                             new Runnable() {
                                 @Override
                                 public void run() {
-                                    callback.resolve(createMediaObject());
+                                    callback.success(createMediaObject());
                                 }
                             }
                         );
@@ -784,14 +784,14 @@ public class ChromecastSession {
                                     @Override
                                     public void onResult(@NonNull MediaChannelResult result) {
                                         if (!result.getStatus().isSuccess()) {
-                                            callback.reject("session_error");
+                                            callback.error("session_error");
                                             setQueueReloadCallback(null);
                                         }
                                     }
                                 }
                             );
                     } catch (JSONException e) {
-                        callback.reject(ChromecastUtilities.createError("invalid_parameter", e.getMessage()));
+                        callback.error(ChromecastUtilities.createError("invalid_parameter", e.getMessage()));
                     }
                 }
             }
@@ -805,7 +805,7 @@ public class ChromecastSession {
      */
     public void queueJumpToItem(final Integer itemId, final CallbackContext callback) {
         if (client == null || session == null) {
-            callback.reject("session_error");
+            callback.error("session_error");
             return;
         }
 
@@ -827,7 +827,7 @@ public class ChromecastSession {
                                 @Override
                                 public void onResult(@NonNull MediaChannelResult result) {
                                     if (result.getStatus().isSuccess()) {
-                                        callback.resolve();
+                                        callback.success();
                                     } else {
                                         setQueueStatusUpdatedCallback(null);
                                         JSONObject errorResult = result.getCustomData();
@@ -835,7 +835,7 @@ public class ChromecastSession {
                                         if (errorResult != null) {
                                             error += "\nError details: " + errorResult;
                                         }
-                                        callback.reject(error);
+                                        callback.error(error);
                                     }
                                 }
                             }
@@ -854,7 +854,7 @@ public class ChromecastSession {
      */
     public void setVolume(final double volume, final CallbackContext callback) {
         if (client == null || session == null) {
-            callback.reject("session_error");
+            callback.error("session_error");
             return;
         }
         activity.runOnUiThread(
@@ -862,9 +862,9 @@ public class ChromecastSession {
                 public void run() {
                     try {
                         session.setVolume(volume);
-                        callback.resolve();
+                        callback.success();
                     } catch (IOException e) {
-                        callback.reject("CHANNEL_ERROR");
+                        callback.error("CHANNEL_ERROR");
                     }
                 }
             }
@@ -878,7 +878,7 @@ public class ChromecastSession {
      */
     public void setMute(final boolean muted, final CallbackContext callback) {
         if (client == null || session == null) {
-            callback.reject("session_error");
+            callback.error("session_error");
             return;
         }
         activity.runOnUiThread(
@@ -886,9 +886,9 @@ public class ChromecastSession {
                 public void run() {
                     try {
                         session.setMute(muted);
-                        callback.resolve();
+                        callback.success();
                     } catch (IOException e) {
-                        callback.reject("CHANNEL_ERROR");
+                        callback.error("CHANNEL_ERROR");
                     }
                 }
             }
@@ -908,14 +908,14 @@ public class ChromecastSession {
             @Override
             public void onResult(@NonNull MediaChannelResult result) {
                 if (result.getStatus().isSuccess()) {
-                    callback.resolve();
+                    callback.success();
                 } else {
                     JSONObject errorResult = result.getCustomData();
                     String error = errorMsg;
                     if (errorResult != null) {
                         error += "\nError details: " + errorMsg;
                     }
-                    callback.reject(error);
+                    callback.error(error);
                 }
             }
         };
