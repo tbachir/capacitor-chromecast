@@ -69,7 +69,8 @@
   "swiftlint": "@ionic/swiftlint-config",
   "capacitor": {
     "ios": {
-      "src": "ios"
+      "src": "ios",
+      "podspec": "CapacitorChromecast.podspec"
     },
     "android": {
       "src": "android"
