@@ -495,10 +495,8 @@ public class ChromecastPlugin: CAPPlugin, ChromecastListener {
 
     public func onMessageReceived(_ deviceId: String, namespace: String, message: String) {
         notifyListeners(EVENT_RECEIVER_MESSAGE, data: [
-            deviceId: [
-                "namespace": namespace,
-                "message": message
-            ]
+            "namespace": namespace,
+            "message": message
         ])
     }
 }
