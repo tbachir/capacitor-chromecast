@@ -5,7 +5,6 @@ import static org.junit.Assert.*;
 import com.google.android.gms.cast.MediaInfo;
 import com.google.android.gms.cast.MediaMetadata;
 import com.google.android.gms.cast.MediaStatus;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -412,8 +411,17 @@ public class ChromecastUtilitiesTest {
     @Test
     public void testMetadataMapping_Bidirectional() {
         // Test that converting to Android and back gives original value
-        String[] clientNames = {"title", "subtitle", "artist", "albumName", "albumArtist",
-                               "composer", "seriesTitle", "season", "episode"};
+        String[] clientNames = {
+            "title",
+            "subtitle",
+            "artist",
+            "albumName",
+            "albumArtist",
+            "composer",
+            "seriesTitle",
+            "season",
+            "episode"
+        };
 
         for (String clientName : clientNames) {
             String androidName = ChromecastUtilities.getAndroidMetadataName(clientName);

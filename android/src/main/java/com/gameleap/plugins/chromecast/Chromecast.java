@@ -4,30 +4,27 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.mediarouter.media.MediaRouter;
-
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
-import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.CapacitorPlugin;
 import com.google.android.gms.cast.CastDevice;
 import com.google.android.gms.cast.framework.Session;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
-
+import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.List;
-
-@CapacitorPlugin()
+@CapacitorPlugin
 public class Chromecast extends Plugin {
+
     /**
      * Tag for logging.
      */
@@ -80,128 +77,130 @@ public class Chromecast extends Plugin {
         setup();
 
         try {
-            this.connection = new ChromecastConnection(getActivity(), new ChromecastConnection.Listener() {
-                @Override
-                public void onSessionStarted(Session session, String sessionId) {
-                    try {
-                        JSONObject result = new JSONObject();
-                        result.put("isConnected", session.isConnected());
-                        result.put("sessionId", sessionId);
-                        sendEvent("SESSION_STARTED", JSObject.fromJSONObject(result));
-                    } catch (JSONException e) {
-                        Log.e(TAG, "Error creating SESSION_STARTED event", e);
-                    }
-                }
-
-                @Override
-                public void onSessionEnded(Session session, int error) {
-                    try {
-                        JSONObject result = new JSONObject();
-                        result.put("isConnected", session.isConnected());
-                        result.put("error", error);
-                        sendEvent("SESSION_ENDED", JSObject.fromJSONObject(result));
-                    } catch (JSONException e) {
-                        Log.e(TAG, "Error creating SESSION_ENDED event", e);
-                    }
-                }
-
-                @Override
-                public void onSessionEnding(Session session) {
-                }
-
-                @Override
-                public void onSessionResumeFailed(Session session, int error) {
-                }
-
-                @Override
-                public void onSessionResumed(Session session, boolean wasSuspended) {
-                    try {
-                        JSONObject result = new JSONObject();
-                        result.put("isConnected", session.isConnected());
-                        result.put("wasSuspended", wasSuspended);
-                        sendEvent("SESSION_RESUMED", JSObject.fromJSONObject(result));
-                    } catch (JSONException e) {
-                        Log.e(TAG, "Error creating SESSION_RESUMED event", e);
-                    }
-                }
-
-                @Override
-                public void onSessionResuming(Session session, String sessionId) {
-                }
-
-                @Override
-                public void onSessionStartFailed(Session session, int error) {
-                    try {
-                        JSONObject result = new JSONObject();
-                        result.put("isConnected", session.isConnected());
-                        result.put("error", error);
-                        sendEvent("SESSION_START_FAILED", JSObject.fromJSONObject(result));
-                    } catch (JSONException e) {
-                        Log.e(TAG, "Error creating SESSION_START_FAILED event", e);
-                    }
-                }
-
-                @Override
-                public void onSessionStarting(Session session) {
-                }
-
-                @Override
-                public void onSessionSuspended(Session session, int reason) {
-                }
-
-                @Override
-                public void onSessionRejoin(JSONObject jsonSession) {
-                    try {
-                        sendEvent("SESSION_LISTENER", JSObject.fromJSONObject(jsonSession));
-                    } catch (JSONException e) {
-                        Log.e(TAG, "Error creating SESSION_LISTENER event", e);
-                    }
-                }
-
-                @Override
-                public void onSessionUpdate(JSONObject jsonSession) {
-                    try {
-                        sendEvent("SESSION_UPDATE", JSObject.fromJSONObject(jsonSession));
-                    } catch (JSONException e) {
-                        Log.e(TAG, "Error creating SESSION_UPDATE event", e);
-                    }
-                }
-
-                @Override
-                public void onSessionEnd(JSONObject jsonSession) {
-                    onSessionUpdate(jsonSession);
-                }
-
-                @Override
-                public void onReceiverAvailableUpdate(boolean available) {
-                    sendEvent("RECEIVER_LISTENER", new JSObject().put("isAvailable", available));
-                }
-
-                @Override
-                public void onMediaLoaded(JSONObject jsonMedia) {
-                    try {
-                        sendEvent("MEDIA_LOAD", JSObject.fromJSONObject(jsonMedia));
-                    } catch (JSONException e) {
-                        Log.e(TAG, "Error creating MEDIA_LOAD event", e);
-                    }
-                }
-
-                @Override
-                public void onMediaUpdate(JSONObject jsonMedia) {
-                    try {
-                        if (jsonMedia != null) {
-                            sendEvent("MEDIA_UPDATE", JSObject.fromJSONObject(jsonMedia));
+            this.connection =
+                new ChromecastConnection(
+                    getActivity(),
+                    new ChromecastConnection.Listener() {
+                        @Override
+                        public void onSessionStarted(Session session, String sessionId) {
+                            try {
+                                JSONObject result = new JSONObject();
+                                result.put("isConnected", session.isConnected());
+                                result.put("sessionId", sessionId);
+                                sendEvent("SESSION_STARTED", JSObject.fromJSONObject(result));
+                            } catch (JSONException e) {
+                                Log.e(TAG, "Error creating SESSION_STARTED event", e);
+                            }
                         }
-                    } catch (JSONException e) {
-                        Log.e(TAG, "Error creating MEDIA_UPDATE event", e);
-                    }
-                }
 
-                @Override
-                public void onMessageReceived(CastDevice device, String namespace, String message) {
-                    sendEvent("RECEIVER_MESSAGE", new JSObject().put(device.getDeviceId(), new JSObject().put("namespace", namespace).put("message", message)));
-                }
-            });
+                        @Override
+                        public void onSessionEnded(Session session, int error) {
+                            try {
+                                JSONObject result = new JSONObject();
+                                result.put("isConnected", session.isConnected());
+                                result.put("error", error);
+                                sendEvent("SESSION_ENDED", JSObject.fromJSONObject(result));
+                            } catch (JSONException e) {
+                                Log.e(TAG, "Error creating SESSION_ENDED event", e);
+                            }
+                        }
+
+                        @Override
+                        public void onSessionEnding(Session session) {}
+
+                        @Override
+                        public void onSessionResumeFailed(Session session, int error) {}
+
+                        @Override
+                        public void onSessionResumed(Session session, boolean wasSuspended) {
+                            try {
+                                JSONObject result = new JSONObject();
+                                result.put("isConnected", session.isConnected());
+                                result.put("wasSuspended", wasSuspended);
+                                sendEvent("SESSION_RESUMED", JSObject.fromJSONObject(result));
+                            } catch (JSONException e) {
+                                Log.e(TAG, "Error creating SESSION_RESUMED event", e);
+                            }
+                        }
+
+                        @Override
+                        public void onSessionResuming(Session session, String sessionId) {}
+
+                        @Override
+                        public void onSessionStartFailed(Session session, int error) {
+                            try {
+                                JSONObject result = new JSONObject();
+                                result.put("isConnected", session.isConnected());
+                                result.put("error", error);
+                                sendEvent("SESSION_START_FAILED", JSObject.fromJSONObject(result));
+                            } catch (JSONException e) {
+                                Log.e(TAG, "Error creating SESSION_START_FAILED event", e);
+                            }
+                        }
+
+                        @Override
+                        public void onSessionStarting(Session session) {}
+
+                        @Override
+                        public void onSessionSuspended(Session session, int reason) {}
+
+                        @Override
+                        public void onSessionRejoin(JSONObject jsonSession) {
+                            try {
+                                sendEvent("SESSION_LISTENER", JSObject.fromJSONObject(jsonSession));
+                            } catch (JSONException e) {
+                                Log.e(TAG, "Error creating SESSION_LISTENER event", e);
+                            }
+                        }
+
+                        @Override
+                        public void onSessionUpdate(JSONObject jsonSession) {
+                            try {
+                                sendEvent("SESSION_UPDATE", JSObject.fromJSONObject(jsonSession));
+                            } catch (JSONException e) {
+                                Log.e(TAG, "Error creating SESSION_UPDATE event", e);
+                            }
+                        }
+
+                        @Override
+                        public void onSessionEnd(JSONObject jsonSession) {
+                            onSessionUpdate(jsonSession);
+                        }
+
+                        @Override
+                        public void onReceiverAvailableUpdate(boolean available) {
+                            sendEvent("RECEIVER_LISTENER", new JSObject().put("isAvailable", available));
+                        }
+
+                        @Override
+                        public void onMediaLoaded(JSONObject jsonMedia) {
+                            try {
+                                sendEvent("MEDIA_LOAD", JSObject.fromJSONObject(jsonMedia));
+                            } catch (JSONException e) {
+                                Log.e(TAG, "Error creating MEDIA_LOAD event", e);
+                            }
+                        }
+
+                        @Override
+                        public void onMediaUpdate(JSONObject jsonMedia) {
+                            try {
+                                if (jsonMedia != null) {
+                                    sendEvent("MEDIA_UPDATE", JSObject.fromJSONObject(jsonMedia));
+                                }
+                            } catch (JSONException e) {
+                                Log.e(TAG, "Error creating MEDIA_UPDATE event", e);
+                            }
+                        }
+
+                        @Override
+                        public void onMessageReceived(CastDevice device, String namespace, String message) {
+                            sendEvent(
+                                "RECEIVER_MESSAGE",
+                                new JSObject().put(device.getDeviceId(), new JSObject().put("namespace", namespace).put("message", message))
+                            );
+                        }
+                    }
+                );
             this.media = connection.getChromecastSession();
         } catch (RuntimeException e) {
             Log.e(TAG, "Error initializing Chromecast connection: " + e.getMessage());
@@ -224,30 +223,32 @@ public class Chromecast extends Plugin {
      */
     @PluginMethod
     public boolean requestSession(final PluginCall pluginCall) {
-        connection.requestSession(new ChromecastConnection.RequestSessionCallback() {
-            @Override
-            public void onJoin(JSONObject jsonSession) {
-                try {
-                    pluginCall.resolve(JSObject.fromJSONObject(jsonSession));
-                } catch (JSONException e) {
-                    Log.e(TAG, "Error parsing session JSON", e);
-                    pluginCall.reject("session_parse_error", e.getMessage());
+        connection.requestSession(
+            new ChromecastConnection.RequestSessionCallback() {
+                @Override
+                public void onJoin(JSONObject jsonSession) {
+                    try {
+                        pluginCall.resolve(JSObject.fromJSONObject(jsonSession));
+                    } catch (JSONException e) {
+                        Log.e(TAG, "Error parsing session JSON", e);
+                        pluginCall.reject("session_parse_error", e.getMessage());
+                    }
+                }
+
+                @Override
+                public void onError(int errorCode) {
+                    Log.e(TAG, "Session request failed with error code: " + errorCode);
+                    String errorMessage = getErrorMessage(errorCode);
+                    pluginCall.reject("session_error", errorMessage);
+                }
+
+                @Override
+                public void onCancel() {
+                    Log.d(TAG, "Session request was cancelled by user");
+                    pluginCall.reject("session_cancelled", "User cancelled the session request");
                 }
             }
-
-            @Override
-            public void onError(int errorCode) {
-                Log.e(TAG, "Session request failed with error code: " + errorCode);
-                String errorMessage = getErrorMessage(errorCode);
-                pluginCall.reject("session_error", errorMessage);
-            }
-
-            @Override
-            public void onCancel() {
-                Log.d(TAG, "Session request was cancelled by user");
-                pluginCall.reject("session_cancelled", "User cancelled the session request");
-            }
-        });
+        );
         return true;
     }
 
@@ -294,25 +295,28 @@ public class Chromecast extends Plugin {
     @PluginMethod
     public boolean selectRoute(final PluginCall pluginCall) {
         String routeId = pluginCall.getString("routeId");
-        connection.selectRoute(routeId, new ChromecastConnection.SelectRouteCallback() {
-            @Override
-            public void onJoin(JSONObject jsonSession) {
-                try {
-                    pluginCall.resolve(JSObject.fromJSONObject(jsonSession));
-                } catch (JSONException e) {
-                    pluginCall.reject("json_parse_error", e);
+        connection.selectRoute(
+            routeId,
+            new ChromecastConnection.SelectRouteCallback() {
+                @Override
+                public void onJoin(JSONObject jsonSession) {
+                    try {
+                        pluginCall.resolve(JSObject.fromJSONObject(jsonSession));
+                    } catch (JSONException e) {
+                        pluginCall.reject("json_parse_error", e);
+                    }
                 }
-            }
 
-            @Override
-            public void onError(JSONObject message) {
-                try {
-                    pluginCall.resolve(JSObject.fromJSONObject(message));
-                } catch (JSONException e) {
-                    pluginCall.reject("json_parse_error", e);
+                @Override
+                public void onError(JSONObject message) {
+                    try {
+                        pluginCall.resolve(JSObject.fromJSONObject(message));
+                    } catch (JSONException e) {
+                        pluginCall.reject("json_parse_error", e);
+                    }
                 }
             }
-        });
+        );
         return true;
     }
 
@@ -335,17 +339,21 @@ public class Chromecast extends Plugin {
             return false;
         }
 
-        this.media.sendMessage(namespace, message, new ResultCallback<Status>() {
-            @Override
-            public void onResult(Status result) {
-                if (!result.isSuccess()) {
-                    returnObj.put("error", result.getStatus().toString());
-                } else {
-                    returnObj.put("success", true);
+        this.media.sendMessage(
+                namespace,
+                message,
+                new ResultCallback<Status>() {
+                    @Override
+                    public void onResult(Status result) {
+                        if (!result.isSuccess()) {
+                            returnObj.put("error", result.getStatus().toString());
+                        } else {
+                            returnObj.put("success", true);
+                        }
+                        pluginCall.resolve(returnObj);
+                    }
                 }
-                pluginCall.resolve(returnObj);
-            }
-        });
+            );
         return true;
     }
 
@@ -402,7 +410,19 @@ public class Chromecast extends Plugin {
         Log.d(TAG, "autoPlay: " + autoPlay);
         Log.d(TAG, "========================");
 
-        this.connection.getChromecastSession().loadMedia(contentId, customData, contentType, duration, streamType, autoPlay, currentTime, metadata, textTrackStyle, pluginCall);
+        this.connection.getChromecastSession()
+            .loadMedia(
+                contentId,
+                customData,
+                contentType,
+                duration,
+                streamType,
+                autoPlay,
+                currentTime,
+                metadata,
+                textTrackStyle,
+                pluginCall
+            );
     }
 
     /**
@@ -455,7 +475,19 @@ public class Chromecast extends Plugin {
             streamType = "LIVE";
         }
 
-        this.connection.getChromecastSession().loadMedia(contentId, customData, contentType, duration, streamType, autoPlay, currentTime, metadata, textTrackStyle, pluginCall);
+        this.connection.getChromecastSession()
+            .loadMedia(
+                contentId,
+                customData,
+                contentType,
+                duration,
+                streamType,
+                autoPlay,
+                currentTime,
+                metadata,
+                textTrackStyle,
+                pluginCall
+            );
     }
 
     /**
@@ -513,18 +545,19 @@ public class Chromecast extends Plugin {
                 JSONObject metadataJSON = new JSONObject(metadata.toString());
                 JSONObject textTrackStyleJSON = new JSONObject(textTrackStyle.toString());
 
-                this.connection.getChromecastSession().loadMedia(
-                    mediaUrl,
-                    customDataJSON,
-                    contentType,
-                    duration.longValue(),
-                    streamType,
-                    autoPlay,
-                    currentTime.doubleValue(),
-                    metadataJSON,
-                    textTrackStyleJSON,
-                    pluginCall
-                );
+                this.connection.getChromecastSession()
+                    .loadMedia(
+                        mediaUrl,
+                        customDataJSON,
+                        contentType,
+                        duration.longValue(),
+                        streamType,
+                        autoPlay,
+                        currentTime.doubleValue(),
+                        metadataJSON,
+                        textTrackStyleJSON,
+                        pluginCall
+                    );
             } catch (JSONException e) {
                 Log.e(TAG, "JSON conversion error: " + e.getMessage());
                 pluginCall.reject("json_error", e);
@@ -661,24 +694,25 @@ public class Chromecast extends Plugin {
         Runnable startScan = new Runnable() {
             @Override
             public void run() {
-                clientScan = new ChromecastConnection.ScanCallback() {
-                    @Override
-                    void onRouteUpdate(List<MediaRouter.RouteInfo> routes) {
-                        if (scanPluginCall != null) {
-                            JSObject ret = new JSObject();
-                            JSArray retArr = new JSArray();
+                clientScan =
+                    new ChromecastConnection.ScanCallback() {
+                        @Override
+                        void onRouteUpdate(List<MediaRouter.RouteInfo> routes) {
+                            if (scanPluginCall != null) {
+                                JSObject ret = new JSObject();
+                                JSArray retArr = new JSArray();
 
-                            for (int i = 0; i < routes.size(); i++) {
-                                retArr.put(routes.get(i));
+                                for (int i = 0; i < routes.size(); i++) {
+                                    retArr.put(routes.get(i));
+                                }
+                                ret.put("routes", retArr);
+
+                                scanPluginCall.resolve(ret);
+                            } else {
+                                connection.stopRouteScan(clientScan, null);
                             }
-                            ret.put("routes", retArr);
-
-                            scanPluginCall.resolve(ret);
-                        } else {
-                            connection.stopRouteScan(clientScan, null);
                         }
-                    }
-                };
+                    };
                 connection.startRouteScan(null, clientScan, null);
             }
         };
@@ -698,16 +732,19 @@ public class Chromecast extends Plugin {
      */
     @PluginMethod
     public boolean stopRouteScan(final PluginCall pluginCall) {
-        connection.stopRouteScan(clientScan, new Runnable() {
-            @Override
-            public void run() {
-                if (scanPluginCall != null) {
-                    scanPluginCall.reject("Scan stopped.");
-                    scanPluginCall = null;
+        connection.stopRouteScan(
+            clientScan,
+            new Runnable() {
+                @Override
+                public void run() {
+                    if (scanPluginCall != null) {
+                        scanPluginCall.reject("Scan stopped.");
+                        scanPluginCall = null;
+                    }
+                    pluginCall.resolve();
                 }
-                pluginCall.resolve();
             }
-        });
+        );
         return true;
     }
 
@@ -755,7 +792,6 @@ public class Chromecast extends Plugin {
             } else {
                 result.put("castConnectionAvailable", false);
             }
-
         } catch (Exception e) {
             result.put("error", "Error during diagnostic: " + e.getMessage());
             Log.e(TAG, "Error in networkDiagnostic", e);
@@ -771,16 +807,19 @@ public class Chromecast extends Plugin {
      */
     private boolean setup() {
         if (this.connection != null) {
-            connection.stopRouteScan(clientScan, new Runnable() {
-                @Override
-                public void run() {
-                    if (scanPluginCall != null) {
-                        scanPluginCall.reject("Scan stopped because setup triggered.");
-                        scanPluginCall = null;
+            connection.stopRouteScan(
+                clientScan,
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        if (scanPluginCall != null) {
+                            scanPluginCall.reject("Scan stopped because setup triggered.");
+                            scanPluginCall = null;
+                        }
+                        sendEvent("SETUP", new JSObject());
                     }
-                    sendEvent("SETUP", new JSObject());
                 }
-            });
+            );
         }
 
         return true;

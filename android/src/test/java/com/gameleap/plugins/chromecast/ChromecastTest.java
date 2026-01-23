@@ -2,10 +2,9 @@ package com.gameleap.plugins.chromecast;
 
 import static org.junit.Assert.*;
 
+import java.lang.reflect.Method;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.lang.reflect.Method;
 
 /**
  * Unit tests for the Chromecast plugin.
@@ -319,10 +318,23 @@ public class ChromecastTest {
         Method[] methods = Chromecast.class.getMethods();
 
         String[] expectedPluginMethods = {
-            "initialize", "requestSession", "selectRoute", "loadMedia",
-            "loadMediaWithHeaders", "launchMedia", "mediaPause", "mediaPlay",
-            "mediaSeek", "mediaNext", "mediaPrev", "sessionStop", "sessionLeave",
-            "startRouteScan", "stopRouteScan", "sendMessage", "addMessageListener",
+            "initialize",
+            "requestSession",
+            "selectRoute",
+            "loadMedia",
+            "loadMediaWithHeaders",
+            "launchMedia",
+            "mediaPause",
+            "mediaPlay",
+            "mediaSeek",
+            "mediaNext",
+            "mediaPrev",
+            "sessionStop",
+            "sessionLeave",
+            "startRouteScan",
+            "stopRouteScan",
+            "sendMessage",
+            "addMessageListener",
             "networkDiagnostic"
         };
 

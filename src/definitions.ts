@@ -126,7 +126,9 @@ export interface ChromecastPlugin {
   /**
    * Load media with authentication headers for protected content.
    */
-  loadMediaWithHeaders(options: LoadMediaWithHeadersOptions): Promise<MediaObject>;
+  loadMediaWithHeaders(
+    options: LoadMediaWithHeadersOptions,
+  ): Promise<MediaObject>;
 
   /**
    * Pause the current media.
@@ -167,7 +169,9 @@ export interface ChromecastPlugin {
   /**
    * Start scanning for available Chromecast devices.
    */
-  startRouteScan(options?: { timeout?: number }): Promise<{ routes: RouteInfo[] }>;
+  startRouteScan(options?: {
+    timeout?: number;
+  }): Promise<{ routes: RouteInfo[] }>;
 
   /**
    * Stop scanning for devices.
@@ -182,7 +186,10 @@ export interface ChromecastPlugin {
   /**
    * Send a custom message to the receiver.
    */
-  sendMessage(options: { namespace: string; message: string }): Promise<SendMessageResult>;
+  sendMessage(options: {
+    namespace: string;
+    message: string;
+  }): Promise<SendMessageResult>;
 
   /**
    * Add a listener for messages from the receiver on a specific namespace.

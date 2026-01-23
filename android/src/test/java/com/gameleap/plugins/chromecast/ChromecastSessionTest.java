@@ -2,9 +2,8 @@ package com.gameleap.plugins.chromecast;
 
 import static org.junit.Assert.*;
 
-import org.junit.Test;
-
 import java.lang.reflect.Method;
+import org.junit.Test;
 
 /**
  * Unit tests for ChromecastSession.
@@ -15,8 +14,7 @@ public class ChromecastSessionTest {
 
     @Test
     public void testHasSetSessionMethod() throws NoSuchMethodException {
-        Method method = ChromecastSession.class.getMethod("setSession",
-            com.google.android.gms.cast.framework.CastSession.class);
+        Method method = ChromecastSession.class.getMethod("setSession", com.google.android.gms.cast.framework.CastSession.class);
         assertNotNull("setSession method should exist", method);
     }
 
@@ -28,9 +26,13 @@ public class ChromecastSessionTest {
 
     @Test
     public void testHasSendMessageMethod() throws NoSuchMethodException {
-        Method method = ChromecastSession.class.getMethod("sendMessage",
-            String.class, String.class,
-            com.google.android.gms.common.api.ResultCallback.class);
+        Method method =
+            ChromecastSession.class.getMethod(
+                    "sendMessage",
+                    String.class,
+                    String.class,
+                    com.google.android.gms.common.api.ResultCallback.class
+                );
         assertNotNull("sendMessage method should exist", method);
     }
 
@@ -66,17 +68,20 @@ public class ChromecastSessionTest {
 
     @Test
     public void testHasLoadMediaMethod() throws NoSuchMethodException {
-        Method method = ChromecastSession.class.getMethod("loadMedia",
-            String.class,           // contentId
-            org.json.JSONObject.class,  // customData
-            String.class,           // contentType
-            long.class,             // duration
-            String.class,           // streamType
-            boolean.class,          // autoPlay
-            double.class,           // currentTime
-            org.json.JSONObject.class,  // metadata
-            org.json.JSONObject.class,  // textTrackStyle
-            com.getcapacitor.PluginCall.class);  // callback
+        Method method =
+            ChromecastSession.class.getMethod(
+                    "loadMedia",
+                    String.class, // contentId
+                    org.json.JSONObject.class, // customData
+                    String.class, // contentType
+                    long.class, // duration
+                    String.class, // streamType
+                    boolean.class, // autoPlay
+                    double.class, // currentTime
+                    org.json.JSONObject.class, // metadata
+                    org.json.JSONObject.class, // textTrackStyle
+                    com.getcapacitor.PluginCall.class
+                ); // callback
         assertNotNull("loadMedia method should exist", method);
     }
 
@@ -84,29 +89,25 @@ public class ChromecastSessionTest {
 
     @Test
     public void testListenerInterface_HasOnMediaLoaded() throws NoSuchMethodException {
-        Method method = ChromecastSession.Listener.class.getMethod("onMediaLoaded",
-            org.json.JSONObject.class);
+        Method method = ChromecastSession.Listener.class.getMethod("onMediaLoaded", org.json.JSONObject.class);
         assertNotNull("Listener.onMediaLoaded should exist", method);
     }
 
     @Test
     public void testListenerInterface_HasOnMediaUpdate() throws NoSuchMethodException {
-        Method method = ChromecastSession.Listener.class.getMethod("onMediaUpdate",
-            org.json.JSONObject.class);
+        Method method = ChromecastSession.Listener.class.getMethod("onMediaUpdate", org.json.JSONObject.class);
         assertNotNull("Listener.onMediaUpdate should exist", method);
     }
 
     @Test
     public void testListenerInterface_HasOnSessionUpdate() throws NoSuchMethodException {
-        Method method = ChromecastSession.Listener.class.getMethod("onSessionUpdate",
-            org.json.JSONObject.class);
+        Method method = ChromecastSession.Listener.class.getMethod("onSessionUpdate", org.json.JSONObject.class);
         assertNotNull("Listener.onSessionUpdate should exist", method);
     }
 
     @Test
     public void testListenerInterface_HasOnSessionEnd() throws NoSuchMethodException {
-        Method method = ChromecastSession.Listener.class.getMethod("onSessionEnd",
-            org.json.JSONObject.class);
+        Method method = ChromecastSession.Listener.class.getMethod("onSessionEnd", org.json.JSONObject.class);
         assertNotNull("Listener.onSessionEnd should exist", method);
     }
 
@@ -115,9 +116,8 @@ public class ChromecastSessionTest {
     @Test
     public void testConstructor() throws NoSuchMethodException {
         // Verify constructor exists with correct parameters
-        java.lang.reflect.Constructor<?> constructor = ChromecastSession.class.getConstructor(
-            android.app.Activity.class,
-            ChromecastSession.Listener.class);
+        java.lang.reflect.Constructor<?> constructor =
+            ChromecastSession.class.getConstructor(android.app.Activity.class, ChromecastSession.Listener.class);
         assertNotNull("Constructor should exist with Activity and Listener params", constructor);
     }
 
