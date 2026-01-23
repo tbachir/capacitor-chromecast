@@ -97,13 +97,13 @@ public class ChromecastConnection {
                             setAppId(applicationId);
                         } else {
                             // Else, just return
-                            pluginCall.success();
+                            pluginCall.resolve();
                             return;
                         }
                     }
 
                     // Tell the client that initialization was a success
-                    pluginCall.success();
+                    pluginCall.resolve();
 
                     // Check if there is any available receivers for 5 seconds
                     startRouteScan(
@@ -549,7 +549,7 @@ public class ChromecastConnection {
                                     getSessionManager().removeSessionManagerListener(this, CastSession.class);
                                     media.setSession(null);
                                     if (pluginCall != null) {
-                                        pluginCall.success();
+                                        pluginCall.resolve();
                                     }
                                     listener.onSessionEnd(
                                         ChromecastUtilities.createSessionObject(castSession, stopCasting ? "stopped" : "disconnected")
