@@ -19,7 +19,9 @@ declare global {
   }
 }
 
-export class ChromecastWeb extends WebPlugin implements Omit<ChromecastPlugin, 'addListener'> {
+export class ChromecastWeb
+  extends WebPlugin
+  implements Omit<ChromecastPlugin, 'addListener'> {
   private cast: any;
   private session: any;
 
@@ -73,7 +75,9 @@ export class ChromecastWeb extends WebPlugin implements Omit<ChromecastPlugin, '
     });
   }
 
-  async launchMedia(options: { mediaUrl: string }): Promise<{ success: boolean }> {
+  async launchMedia(options: {
+    mediaUrl: string;
+  }): Promise<{ success: boolean }> {
     if (!this.session) {
       throw new Error('No active session');
     }
@@ -134,9 +138,9 @@ export class ChromecastWeb extends WebPlugin implements Omit<ChromecastPlugin, '
     }
   }
 
-  async startRouteScan(
-    _options?: { timeout?: number },
-  ): Promise<{ routes: RouteInfo[] }> {
+  async startRouteScan(_options?: {
+    timeout?: number;
+  }): Promise<{ routes: RouteInfo[] }> {
     throw new Error('Web implementation not available');
   }
 
