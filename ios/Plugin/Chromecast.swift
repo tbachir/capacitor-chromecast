@@ -460,7 +460,7 @@ enum ChromecastError: Error, LocalizedError {
 
     /// Send a custom message to the receiver
     public func sendMessage(namespace: String, message: String, completion: @escaping (Result<Bool, Error>) -> Void) {
-        DispatchQueue.main.async { [weak self] in
+        DispatchQueue.main.async { [weak self] () -> Void in
             guard let self = self else {
                 completion(.failure(ChromecastError.notInitialized))
                 return
@@ -494,7 +494,7 @@ enum ChromecastError: Error, LocalizedError {
 
     /// Add a message listener for a namespace
     public func addMessageListener(namespace: String, completion: @escaping (Error?) -> Void) {
-        DispatchQueue.main.async { [weak self] in
+        DispatchQueue.main.async { [weak self] () -> Void in
             guard let self = self else {
                 completion(ChromecastError.notInitialized)
                 return
