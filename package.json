@@ -15,6 +15,9 @@
   ],
   "author": "Dimitar Todorov",
   "license": "MIT",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/hauxir/capacitor-chromecast.git"
