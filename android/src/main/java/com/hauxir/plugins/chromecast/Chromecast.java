@@ -1,4 +1,4 @@
-package com.gameleap.plugins.chromecast;
+package com.hauxir.plugins.chromecast;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
@@ -22,7 +22,7 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-@CapacitorPlugin(name = "CapChromecast")
+@CapacitorPlugin(name = "Chromecast")
 public class Chromecast extends Plugin {
 
     /**

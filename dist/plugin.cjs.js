@@ -6,7 +6,7 @@ var core = require('@capacitor/core');
 
 // Singleton promise to prevent race conditions in Capacitor's loadPluginImplementation
 let webInstancePromise = null;
-const Chromecast = core.registerPlugin('CapChromecast', {
+const Chromecast = core.registerPlugin('Chromecast', {
     web: () => {
         if (!webInstancePromise) {
             webInstancePromise = Promise.resolve().then(function () { return web; }).then(m => new m.ChromecastWeb());

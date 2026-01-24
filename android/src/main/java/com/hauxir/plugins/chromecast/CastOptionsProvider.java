@@ -1,4 +1,4 @@
-package com.gameleap.plugins.chromecast;
+package com.hauxir.plugins.chromecast;
 
 import android.content.Context;
 import com.google.android.gms.cast.framework.CastOptions;

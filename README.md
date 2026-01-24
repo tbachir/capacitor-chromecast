@@ -1,11 +1,11 @@
-# @gameleap/capacitor-chromecast
+# @hauxir/capacitor-chromecast
 
 This is a plugin for Capacitor that enables Chromecast functionality for iOS and Android.
 
 ## Install
 
 ```bash
-npm install @gameleap/capacitor-chromecast
+npm install @hauxir/capacitor-chromecast
 npx cap sync
 ```
 
