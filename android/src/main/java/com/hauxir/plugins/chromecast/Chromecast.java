@@ -238,10 +238,7 @@ public class Chromecast extends Plugin {
                         @Override
                         public void onMessageReceived(CastDevice device, String namespace, String message) {
                             Log.d(TAG, "onMessageReceived - namespace: " + namespace + ", message: " + message);
-                            sendEvent(
-                                "RECEIVER_MESSAGE",
-                                new JSObject().put("namespace", namespace).put("message", message)
-                            );
+                            sendEvent("RECEIVER_MESSAGE", new JSObject().put("namespace", namespace).put("message", message));
                         }
                     }
                 );
