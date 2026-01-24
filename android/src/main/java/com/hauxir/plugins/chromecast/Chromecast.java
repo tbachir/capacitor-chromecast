@@ -237,10 +237,8 @@ public class Chromecast extends Plugin {
 
                         @Override
                         public void onMessageReceived(CastDevice device, String namespace, String message) {
-                            sendEvent(
-                                "RECEIVER_MESSAGE",
-                                new JSObject().put(device.getDeviceId(), new JSObject().put("namespace", namespace).put("message", message))
-                            );
+                            Log.d(TAG, "onMessageReceived - namespace: " + namespace + ", message: " + message);
+                            sendEvent("RECEIVER_MESSAGE", new JSObject().put("namespace", namespace).put("message", message));
                         }
                     }
                 );
@@ -408,12 +406,18 @@ public class Chromecast extends Plugin {
     @PluginMethod
     public void addMessageListener(PluginCall pluginCall) {
         String namespace = pluginCall.getString("namespace");
-        if (namespace != null) {
-            this.media.addMessageListener(namespace);
-            pluginCall.resolve();
-        } else {
+        if (namespace == null) {
             pluginCall.reject("namespace is required");
+            return;
         }
+        if (this.media == null) this.media = connection.getChromecastSession();
+        if (this.media == null) {
+            Log.d(TAG, "addMessageListener: Session not found");
+            pluginCall.reject("No active session");
+            return;
+        }
+        this.media.addMessageListener(namespace);
+        pluginCall.resolve();
     }
 
     /**
