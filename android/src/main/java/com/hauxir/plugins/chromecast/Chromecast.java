@@ -13,6 +13,7 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.google.android.gms.cast.CastDevice;
+import com.google.android.gms.cast.framework.CastSession;
 import com.google.android.gms.cast.framework.Session;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -84,10 +85,26 @@ public class Chromecast extends Plugin {
                         @Override
                         public void onSessionStarted(Session session, String sessionId) {
                             try {
-                                JSONObject result = new JSONObject();
-                                result.put("isConnected", session.isConnected());
-                                result.put("sessionId", sessionId);
-                                sendEvent("SESSION_STARTED", JSObject.fromJSONObject(result));
+                                // Cast to CastSession to get full session info
+                                if (session instanceof CastSession) {
+                                    CastSession castSession = (CastSession) session;
+                                    // Update the media session reference
+                                    if (media != null) {
+                                        media.setSession(castSession);
+                                    }
+                                    // Create a full session object like iOS does
+                                    JSONObject sessionObject = ChromecastUtilities.createSessionObject(castSession, "connected");
+                                    // Fire both SESSION_STARTED and SESSION_UPDATE for compatibility with iOS
+                                    sendEvent("SESSION_STARTED", JSObject.fromJSONObject(sessionObject));
+                                    sendEvent("SESSION_UPDATE", JSObject.fromJSONObject(sessionObject));
+                                    Log.d(TAG, "Session started and connected: " + sessionId);
+                                } else {
+                                    // Fallback to basic info
+                                    JSONObject result = new JSONObject();
+                                    result.put("isConnected", session.isConnected());
+                                    result.put("sessionId", sessionId);
+                                    sendEvent("SESSION_STARTED", JSObject.fromJSONObject(result));
+                                }
                             } catch (JSONException e) {
                                 Log.e(TAG, "Error creating SESSION_STARTED event", e);
                             }
@@ -96,10 +113,20 @@ public class Chromecast extends Plugin {
                         @Override
                         public void onSessionEnded(Session session, int error) {
                             try {
-                                JSONObject result = new JSONObject();
-                                result.put("isConnected", session.isConnected());
-                                result.put("error", error);
-                                sendEvent("SESSION_ENDED", JSObject.fromJSONObject(result));
+                                // Cast to CastSession to get full session info
+                                if (session instanceof CastSession) {
+                                    CastSession castSession = (CastSession) session;
+                                    String status = error != 0 ? "error" : "stopped";
+                                    JSONObject sessionObject = ChromecastUtilities.createSessionObject(castSession, status);
+                                    sendEvent("SESSION_ENDED", JSObject.fromJSONObject(sessionObject));
+                                    Log.d(TAG, "Session ended with status: " + status);
+                                } else {
+                                    // Fallback to basic info
+                                    JSONObject result = new JSONObject();
+                                    result.put("isConnected", session.isConnected());
+                                    result.put("error", error);
+                                    sendEvent("SESSION_ENDED", JSObject.fromJSONObject(result));
+                                }
                             } catch (JSONException e) {
                                 Log.e(TAG, "Error creating SESSION_ENDED event", e);
                             }
@@ -114,10 +141,26 @@ public class Chromecast extends Plugin {
                         @Override
                         public void onSessionResumed(Session session, boolean wasSuspended) {
                             try {
-                                JSONObject result = new JSONObject();
-                                result.put("isConnected", session.isConnected());
-                                result.put("wasSuspended", wasSuspended);
-                                sendEvent("SESSION_RESUMED", JSObject.fromJSONObject(result));
+                                // Cast to CastSession to get full session info
+                                if (session instanceof CastSession) {
+                                    CastSession castSession = (CastSession) session;
+                                    // Update the media session reference
+                                    if (media != null) {
+                                        media.setSession(castSession);
+                                    }
+                                    // Create a full session object like iOS does
+                                    JSONObject sessionObject = ChromecastUtilities.createSessionObject(castSession, "connected");
+                                    // Fire SESSION_RESUMED and SESSION_LISTENER/SESSION_UPDATE for compatibility
+                                    sendEvent("SESSION_RESUMED", JSObject.fromJSONObject(sessionObject));
+                                    sendEvent("SESSION_LISTENER", JSObject.fromJSONObject(sessionObject));
+                                    Log.d(TAG, "Session resumed: " + castSession.getSessionId());
+                                } else {
+                                    // Fallback to basic info
+                                    JSONObject result = new JSONObject();
+                                    result.put("isConnected", session.isConnected());
+                                    result.put("wasSuspended", wasSuspended);
+                                    sendEvent("SESSION_RESUMED", JSObject.fromJSONObject(result));
+                                }
                             } catch (JSONException e) {
                                 Log.e(TAG, "Error creating SESSION_RESUMED event", e);
                             }

@@ -67,6 +67,10 @@ public class ChromecastConnection {
                     // CastContext and prep it for searching for a session to rejoin
                     // Also adds the receiver update callback
                     getContext().addCastStateListener(listener);
+
+                    // IMPORTANT: Also add as SessionManagerListener to receive session events
+                    // (SESSION_STARTED, SESSION_ENDED, etc.)
+                    getSessionManager().addSessionManagerListener(listener, CastSession.class);
                 }
             }
         );
