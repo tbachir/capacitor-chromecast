@@ -45,6 +45,8 @@ public class ChromecastSession {
     private Runnable queueReloadCallback;
     /** Stores a callback that should be called when the queue status is updated. **/
     private Runnable queueStatusUpdatedCallback;
+    /** Stores namespaces that need message listeners registered when session becomes available. **/
+    private java.util.Set<String> pendingMessageNamespaces = new java.util.HashSet<>();
 
     /**
      * ChromecastSession constructor.
@@ -74,6 +76,10 @@ public class ChromecastSession {
                     }
                     session = castSession;
                     client = session.getRemoteMediaClient();
+
+                    // Register any pending message listeners now that session is available
+                    registerPendingMessageListeners();
+
                     if (client == null) {
                         return;
                     }
@@ -177,20 +183,37 @@ public class ChromecastSession {
      * @param namespace namespace
      */
     public void addMessageListener(final String namespace) {
-        if (client == null || session == null) {
-            return;
+        // Always add to pending set first
+        synchronized (pendingMessageNamespaces) {
+            pendingMessageNamespaces.add(namespace);
         }
+        // Try to register now if session is ready
         activity.runOnUiThread(
             new Runnable() {
                 public void run() {
-                    try {
-                        session.setMessageReceivedCallbacks(namespace, clientListener);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    registerPendingMessageListeners();
                 }
             }
         );
+    }
+
+    /**
+     * Registers all pending message listeners if session is available.
+     */
+    private void registerPendingMessageListeners() {
+        if (session == null) {
+            return;
+        }
+        synchronized (pendingMessageNamespaces) {
+            for (String namespace : pendingMessageNamespaces) {
+                try {
+                    session.setMessageReceivedCallbacks(namespace, clientListener);
+                    android.util.Log.d("Chromecast", "Registered message listener for namespace: " + namespace);
+                } catch (IOException e) {
+                    android.util.Log.e("Chromecast", "Failed to register message listener for namespace: " + namespace, e);
+                }
+            }
+        }
     }
 
     /**
