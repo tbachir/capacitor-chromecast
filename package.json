@@ -1,6 +1,6 @@
 {
-  "name": "@hauxir/capacitor-chromecast",
-  "version": "0.0.6",
+  "name": "@hauxir2/capacitor-chromecast",
+  "version": "0.0.7",
   "description": "This is a plugin for Capacitor that enables Chromecast functionality for iOS and Android.",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
@@ -16,7 +16,8 @@
   "author": "Dimitar Todorov",
   "license": "MIT",
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   },
   "repository": {
     "type": "git",
