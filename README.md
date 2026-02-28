@@ -16,6 +16,7 @@ By default, Capacitor iOS projects integrate this plugin through CocoaPods (`npx
 
 If your app uses Swift Package Manager for Capacitor plugins, this package also ships a `Package.swift`.
 You can add `@strasberry/capacitor-chromecast` as a Swift package (local or remote) and link the `StrasberryCapacitorChromecast` library product.
+The SPM manifest supports Capacitor iOS packages in the `>= 7.0.0` and `< 9.0.0` range.
 
 Maintainers: see the [Publishing guide](./CONTRIBUTING.md#publishing) for release steps.
 

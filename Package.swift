@@ -11,7 +11,8 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", from: "7.0.0"),
+        // Support Capacitor 7 and 8 when integrated through Swift Package Manager.
+        .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", "7.0.0"..<"9.0.0"),
         .package(url: "https://github.com/SRGSSR/google-cast-sdk.git", from: "4.8.4")
     ],
     targets: [
