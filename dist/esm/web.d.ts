@@ -183,6 +183,7 @@ export declare class ChromecastWeb extends WebPlugin implements Omit<ChromecastP
     private remotePlayer;
     private remotePlayerController;
     initialize(options?: InitializeOptions): Promise<void>;
+    private applyCastOptions;
     private setupCastContext;
     private setupMessageListenersForSession;
     requestSession(): Promise<SessionObject>;

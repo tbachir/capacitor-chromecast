@@ -70,14 +70,7 @@ class ChromecastWeb extends core.WebPlugin {
             };
         });
     }
-    setupCastContext(options) {
-        // Guard against multiple setupCastContext calls
-        if (this.contextSetup) {
-            return;
-        }
-        this.contextSetup = true;
-        const context = window.cast.framework.CastContext.getInstance();
-        this.context = context;
+    applyCastOptions(context, options) {
         this.appId = (options === null || options === void 0 ? void 0 : options.appId) || '';
         const autoJoinPolicyMap = {
             tab_and_origin_scoped: window.chrome.cast.AutoJoinPolicy.TAB_AND_ORIGIN_SCOPED,
@@ -89,6 +82,20 @@ class ChromecastWeb extends core.WebPlugin {
             autoJoinPolicy: autoJoinPolicyMap[(options === null || options === void 0 ? void 0 : options.autoJoinPolicy) || 'origin_scoped'] ||
                 window.chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
         });
+    }
+    setupCastContext(options) {
+        const context = window.cast.framework.CastContext.getInstance();
+        this.context = context;
+        this.applyCastOptions(context, options);
+        // Re-initialization should update Cast options (appId / join policy) without
+        // duplicating event listeners.
+        if (this.contextSetup) {
+            const { CastState } = window.cast.framework;
+            const available = context.getCastState() !== CastState.NO_DEVICES_AVAILABLE;
+            this.notifyListeners('RECEIVER_LISTENER', { available });
+            return;
+        }
+        this.contextSetup = true;
         // Listen for cast state changes (receiver availability)
         const { CastState } = window.cast.framework;
         context.addEventListener(window.cast.framework.CastContextEventType.CAST_STATE_CHANGED, (event) => {

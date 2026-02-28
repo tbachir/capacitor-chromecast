@@ -14,6 +14,7 @@ public class ChromecastPlugin: CAPPlugin, ChromecastListener {
     // MARK: - Properties
     private var implementation: Chromecast?
     private var isInitialized = false
+    private var initializedAppId: String?
 
     // MARK: - Event Names (matching Android)
     private let EVENT_SESSION_LISTENER = "SESSION_LISTENER"
@@ -32,7 +33,7 @@ public class ChromecastPlugin: CAPPlugin, ChromecastListener {
 
     @objc func initialize(_ call: CAPPluginCall) {
         print("🔴🔴🔴 ChromecastPlugin initialize() called 🔴🔴🔴")
-        let appId = call.getString("appId")
+        let requestedAppId = call.getString("appId") ?? kGCKDefaultMediaReceiverApplicationID
 
         // Ensure main thread execution
         DispatchQueue.main.async { [weak self] in
@@ -41,12 +42,27 @@ public class ChromecastPlugin: CAPPlugin, ChromecastListener {
                 return
             }
 
+            // Google Cast iOS SDK uses a singleton cast context.
+            // After initialization, switching appId at runtime is not supported.
+            if self.isInitialized {
+                if self.initializedAppId == requestedAppId {
+                    call.resolve()
+                } else {
+                    call.reject(
+                        "iOS Cast SDK is already initialized with appId '\(self.initializedAppId ?? requestedAppId)'. " +
+                        "Restart the app to use a different appId."
+                    )
+                }
+                return
+            }
+
             self.implementation = Chromecast()
-            self.implementation?.initialize(appId: appId, listener: self) { error in
+            self.implementation?.initialize(appId: requestedAppId, listener: self) { error in
                 if let error = error {
                     call.reject(error.localizedDescription)
                 } else {
                     self.isInitialized = true
+                    self.initializedAppId = requestedAppId
                     call.resolve()
                 }
             }

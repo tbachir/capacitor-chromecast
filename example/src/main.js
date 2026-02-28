@@ -29,8 +29,10 @@ const EVENT_NAMES = [
   'SETUP',
 ];
 let listenersRegistered = false;
+let initializedAppId = null;
 
-platformEl.textContent = `Platform: ${Capacitor.getPlatform()}`;
+const platform = Capacitor.getPlatform();
+platformEl.textContent = `Platform: ${platform}`;
 
 function safeJson(value) {
   try {
@@ -110,12 +112,31 @@ document.querySelector('#initializeBtn').addEventListener('click', () => {
   callPlugin('initialize', async () => {
     await setupEventListeners();
     const appId = appIdInput.value.trim();
+    const effectiveAppId = appId || '(default receiver)';
+
+    if (platform === 'ios' && initializedAppId) {
+      if (initializedAppId !== effectiveAppId) {
+        return {
+          initialized: true,
+          appId: initializedAppId,
+          note: `iOS keeps the first initialized appId for this app launch. Restart the app to switch to '${effectiveAppId}'.`,
+        };
+      }
+
+      return {
+        initialized: true,
+        appId: initializedAppId,
+        note: 'Already initialized on iOS for this app launch.',
+      };
+    }
+
     await Chromecast.initialize({
       appId: appId || undefined,
       autoJoinPolicy: 'origin_scoped',
       defaultActionPolicy: 'create_session',
     });
-    return { initialized: true, appId: appId || '(default receiver)' };
+    initializedAppId = effectiveAppId;
+    return { initialized: true, appId: effectiveAppId };
   });
 });
 

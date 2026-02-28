@@ -279,15 +279,10 @@ export class ChromecastWeb
     });
   }
 
-  private setupCastContext(options?: InitializeOptions): void {
-    // Guard against multiple setupCastContext calls
-    if (this.contextSetup) {
-      return;
-    }
-    this.contextSetup = true;
-
-    const context = window.cast.framework.CastContext.getInstance();
-    this.context = context;
+  private applyCastOptions(
+    context: CastContext,
+    options?: InitializeOptions,
+  ): void {
     this.appId = options?.appId || '';
 
     const autoJoinPolicyMap: Record<string, string> = {
@@ -303,6 +298,22 @@ export class ChromecastWeb
         autoJoinPolicyMap[options?.autoJoinPolicy || 'origin_scoped'] ||
         window.chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
     });
+  }
+
+  private setupCastContext(options?: InitializeOptions): void {
+    const context = window.cast.framework.CastContext.getInstance();
+    this.context = context;
+    this.applyCastOptions(context, options);
+
+    // Re-initialization should update Cast options (appId / join policy) without
+    // duplicating event listeners.
+    if (this.contextSetup) {
+      const { CastState } = window.cast.framework;
+      const available = context.getCastState() !== CastState.NO_DEVICES_AVAILABLE;
+      this.notifyListeners('RECEIVER_LISTENER', { available });
+      return;
+    }
+    this.contextSetup = true;
 
     // Listen for cast state changes (receiver availability)
     const { CastState } = window.cast.framework;

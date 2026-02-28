@@ -25,6 +25,26 @@ npm run dev
 
 For native sync and opening platform projects, see [`example/README.md`](./example/README.md).
 
+## iOS Local Network Permissions
+
+For Cast discovery, add local network privacy keys to your iOS app `Info.plist`:
+
+```xml
+<key>NSLocalNetworkUsageDescription</key>
+<string>Chromecast discovery requires access to devices on your local network.</string>
+<key>NSBonjourServices</key>
+<array>
+  <string>_googlecast._tcp</string>
+  <string>_CC1AD845._googlecast._tcp</string>
+</array>
+```
+
+Replace `CC1AD845` with your receiver App ID if you use a custom receiver.
+
+If missing, you can see warnings like: `Key NSBonjourServices is missing in Info.plist`.
+
+On iOS, the Cast SDK keeps the first initialized receiver `appId` for the current app launch. To test another `appId`, fully restart the app, then initialize again.
+
 ## API
 
 <docgen-index>

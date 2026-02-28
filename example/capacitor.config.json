@@ -3,6 +3,9 @@
   "appName": "ChromecastExample",
   "bundledWebRuntime": true,
   "webDir": "www",
+  "ios": {
+    "minVersion": "15.0"
+  },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 0
