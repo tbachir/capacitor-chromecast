@@ -43,10 +43,35 @@ This template is integrated with ESLint, Prettier, and SwiftLint. Using these to
 
 ## Publishing
 
-There is a `prepublishOnly` hook in `package.json` which prepares the plugin before publishing, so all you need to do is run:
+Use this checklist before publishing a new version:
 
-```shell
-npm publish
-```
+1. Make sure you are authenticated with npm and have publish rights for the package scope.
 
-> **Note**: The [`files`](https://docs.npmjs.com/cli/v7/configuring-npm/package-json#files) array in `package.json` specifies which files get published. If you rename files/directories or add files elsewhere, you may need to update it.
+    ```shell
+    npm whoami
+    ```
+
+1. Bump the version in a controlled way.
+
+    ```shell
+    npm version patch
+    # or: npm version minor / npm version major
+    ```
+
+1. Validate and build the package.
+
+    ```shell
+    npm ci
+    npm run build
+    npm run eslint
+    npm pack --dry-run
+    ```
+
+1. Publish the scoped package as public.
+
+    ```shell
+    npm publish --access public
+    ```
+
+> **Note**: `prepublishOnly` in `package.json` runs `npm run build` automatically on publish.
+> **Note**: The [`files`](https://docs.npmjs.com/cli/v7/configuring-npm/package-json#files) array in `package.json` controls what is included in the npm tarball. If you rename files/directories or add files elsewhere, update this list.

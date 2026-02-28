@@ -1,13 +1,15 @@
-# @tbachir/capacitor-chromecast
+# @strasberry/capacitor-chromecast
 
 This is a plugin for Capacitor that enables Chromecast functionality for iOS and Android.
 
 ## Install
 
 ```bash
-npm install @tbachir/capacitor-chromecast
+npm install @strasberry/capacitor-chromecast
 npx cap sync
 ```
+
+Maintainers: see the [Publishing guide](./CONTRIBUTING.md#publishing) for release steps.
 
 ## API
 

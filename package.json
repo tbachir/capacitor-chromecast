@@ -1,5 +1,5 @@
 {
-  "name": "@tbachir/capacitor-chromecast",
+  "name": "@strasberry/capacitor-chromecast",
   "version": "0.0.8",
   "description": "This is a plugin for Capacitor that enables Chromecast functionality for iOS and Android.",
   "main": "dist/plugin.cjs.js",

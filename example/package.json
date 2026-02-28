@@ -14,7 +14,7 @@
     "@capacitor/core": "latest",
     "@capacitor/camera": "latest",
     "@capacitor/splash-screen": "latest",
-    "@tbachir/capacitor-chromecast": "file:.."
+    "@strasberry/capacitor-chromecast": "file:.."
   },
   "devDependencies": {
     "@capacitor/cli": "latest"
