@@ -49,3 +49,20 @@ If you use another receiver app ID, replace `_FB38EA42._googlecast._tcp` with yo
 - `cap:add:ios` uses `--packagemanager SPM`.
 - `requestSession()` opens the Cast device picker.
 - On iOS, the first initialized `appId` is kept for the current app launch; restart the app to switch `appId`.
+
+## MimeIt demo flow (`cast.mimeit.com`)
+
+The example UI includes a ready-to-use MimeIt demo section with:
+
+- App ID preset: `FB38EA42`
+- Namespace preset: `urn:x-cast:com.mimeit.state`
+- Demo message buttons for `RESET`, `HEARTBEAT`, and `SYNC_STATE` scenes (`IDLE`, `NEXT_PLAYER`, `TURN_RUNNING`, `GAME_RESULTS`)
+- One-click sequence button: `Run MimeIt Demo Sequence`
+
+Quick test sequence:
+
+1. Open the app and click `Apply MimeIt Preset`.
+2. Click `Initialize`.
+3. Click `Request Session` and pick your Chromecast device.
+4. Click `Add Listener` (optional, to receive ACK messages/events).
+5. Click `Run MimeIt Demo Sequence` for an automatic full flow, or use scene buttons manually.

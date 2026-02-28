@@ -54,3 +54,20 @@ npm run cap:open:ios
 - This specific example uses CocoaPods for iOS. For SPM iOS integration, use [`../example-spm`](../example-spm).
 - The example iOS app includes `NSLocalNetworkUsageDescription` and `NSBonjourServices` (`_googlecast._tcp`, `_FB38EA42._googlecast._tcp`) in `Info.plist` for Cast discovery.
 - If you use a custom receiver app ID, replace `FB38EA42` in `Info.plist` with your own app ID.
+
+## MimeIt demo flow (`cast.mimeit.com`)
+
+The example UI includes a ready-to-use MimeIt demo section with:
+
+- App ID preset: `FB38EA42`
+- Namespace preset: `urn:x-cast:com.mimeit.state`
+- Demo message buttons for `RESET`, `HEARTBEAT`, and `SYNC_STATE` scenes (`IDLE`, `NEXT_PLAYER`, `TURN_RUNNING`, `GAME_RESULTS`)
+- One-click sequence button: `Run MimeIt Demo Sequence`
+
+Quick test sequence:
+
+1. Open the app and click `Apply MimeIt Preset`.
+2. Click `Initialize`.
+3. Click `Request Session` and pick your Chromecast device.
+4. Click `Add Listener` (optional, to receive ACK messages/events).
+5. Click `Run MimeIt Demo Sequence` for an automatic full flow, or use scene buttons manually.

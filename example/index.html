@@ -21,7 +21,7 @@
         <label for="appId">Receiver App ID (optional)</label>
         <input
           id="appId"
-          placeholder="FB38EA42 (default receiver if empty)"
+          placeholder="FB38EA42 (MimeIt) or leave empty for default receiver"
           value=""
         />
         <div class="row">
@@ -76,12 +76,40 @@
 
       <section class="card">
         <h2>Custom Receiver Messages</h2>
+        <p>
+          MimeIt receiver:
+          <code>FB38EA42</code>
+          -
+          <a
+            href="https://cast.mimeit.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            >cast.mimeit.com</a
+          >
+        </p>
         <label for="namespaceInput">Namespace</label>
         <input id="namespaceInput" value="urn:x-cast:com.mimeit.state" />
         <label for="messageInput">Message JSON</label>
         <textarea id="messageInput" rows="4">
 {"type":"ping","from":"capacitor-example"}
         </textarea>
+        <div class="row">
+          <button id="mimeitPresetBtn">Apply MimeIt Preset</button>
+          <button id="mimeitOpenReceiverBtn">Open cast.mimeit.com</button>
+        </div>
+        <div class="row">
+          <button id="mimeitResetBtn">MimeIt RESET</button>
+          <button id="mimeitHeartbeatBtn">MimeIt HEARTBEAT</button>
+        </div>
+        <div class="row">
+          <button id="mimeitIdleBtn">MimeIt Scene IDLE</button>
+          <button id="mimeitNextPlayerBtn">Scene NEXT_PLAYER</button>
+          <button id="mimeitTurnRunningBtn">Scene TURN_RUNNING</button>
+          <button id="mimeitResultsBtn">Scene GAME_RESULTS</button>
+        </div>
+        <div class="row">
+          <button id="mimeitSequenceBtn">Run MimeIt Demo Sequence</button>
+        </div>
         <div class="row">
           <button id="addMessageListenerBtn">Add Listener</button>
           <button id="removeMessageListenerBtn">Remove Listener</button>

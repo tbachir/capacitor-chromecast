@@ -14,6 +14,80 @@ const contentTypeInput = document.querySelector('#contentType');
 const seekInput = document.querySelector('#seekInput');
 const namespaceInput = document.querySelector('#namespaceInput');
 const messageInput = document.querySelector('#messageInput');
+const mimeitSequenceBtn = document.querySelector('#mimeitSequenceBtn');
+
+const MIMEIT_DEMO = Object.freeze({
+  appId: 'FB38EA42',
+  receiverUrl: 'https://cast.mimeit.com',
+  namespace: 'urn:x-cast:com.mimeit.state',
+});
+
+const MIMEIT_STATES = Object.freeze({
+  IDLE: {
+    scene: 'IDLE',
+    payload: { appName: 'Mime It' },
+  },
+  NEXT_PLAYER: {
+    scene: 'NEXT_PLAYER',
+    payload: {
+      playerName: 'Alice',
+      roundIndex: 1,
+      roundsCount: 3,
+      turnIndex: 1,
+      turnsCount: 4,
+    },
+  },
+  TURN_RUNNING: {
+    scene: 'TURN_RUNNING',
+    payload: {
+      remainingSeconds: 42,
+      totalSeconds: 60,
+      isCritical: false,
+    },
+  },
+  GAME_RESULTS: {
+    scene: 'GAME_RESULTS',
+    payload: {
+      winnerName: 'Team Rouge',
+      soloScores: [
+        {
+          rank: 1,
+          playerName: 'Alice',
+          score: 14,
+          mimedParts: 9,
+          guessedParts: 5,
+        },
+        {
+          rank: 2,
+          playerName: 'Bob',
+          score: 11,
+          mimedParts: 7,
+          guessedParts: 4,
+        },
+      ],
+      teamScores: [
+        {
+          rank: 1,
+          teamName: 'Team Rouge',
+          score: 25,
+          players: [
+            { rank: 1, playerName: 'Alice', mimedParts: 9 },
+            { rank: 2, playerName: 'Bob', mimedParts: 7 },
+          ],
+        },
+        {
+          rank: 2,
+          teamName: 'Team Bleu',
+          score: 19,
+          players: [
+            { rank: 3, playerName: 'Chloe', mimedParts: 6 },
+            { rank: 4, playerName: 'David', mimedParts: 5 },
+          ],
+        },
+      ],
+    },
+  },
+});
 
 const EVENT_NAMES = [
   'SESSION_LISTENER',
@@ -30,6 +104,7 @@ const EVENT_NAMES = [
 ];
 let listenersRegistered = false;
 let initializedAppId = null;
+let mimeItSequenceRunning = false;
 
 const platform = Capacitor.getPlatform();
 platformEl.textContent = `Platform: ${platform}`;
@@ -93,6 +168,126 @@ function parseMessageJson() {
   }
   JSON.parse(raw);
   return raw;
+}
+
+function setMessageJson(value) {
+  messageInput.value = JSON.stringify(value, null, 2);
+}
+
+function buildMimeItSyncStateMessage(scene) {
+  const state = MIMEIT_STATES[scene];
+  if (!state) {
+    throw new Error(`Unsupported MimeIt scene: ${scene}`);
+  }
+  return {
+    type: 'SYNC_STATE',
+    version: '1',
+    payload: state,
+  };
+}
+
+function applyMimeItPreset() {
+  appIdInput.value = MIMEIT_DEMO.appId;
+  namespaceInput.value = MIMEIT_DEMO.namespace;
+  setMessageJson(buildMimeItSyncStateMessage('IDLE'));
+  return {
+    appId: MIMEIT_DEMO.appId,
+    namespace: MIMEIT_DEMO.namespace,
+    receiverUrl: MIMEIT_DEMO.receiverUrl,
+  };
+}
+
+function sendMimeItMessage(label, message) {
+  const namespace = namespaceInput.value.trim() || MIMEIT_DEMO.namespace;
+  if (!namespaceInput.value.trim()) {
+    namespaceInput.value = namespace;
+  }
+  setMessageJson(message);
+  return callPlugin(label, () =>
+    Chromecast.sendMessage({
+      namespace,
+      message: JSON.stringify(message),
+    }),
+  );
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function setMimeItSequenceUi(isRunning) {
+  if (!mimeitSequenceBtn) {
+    return;
+  }
+  mimeitSequenceBtn.disabled = isRunning;
+  mimeitSequenceBtn.textContent = isRunning
+    ? 'MimeIt Sequence Running...'
+    : 'Run MimeIt Demo Sequence';
+}
+
+async function runMimeItDemoSequence() {
+  if (mimeItSequenceRunning) {
+    throw new Error('MimeIt demo sequence is already running');
+  }
+
+  const steps = [
+    {
+      label: 'mimeitSeqReset',
+      message: { type: 'RESET', version: '1' },
+      waitAfterMs: 700,
+    },
+    {
+      label: 'mimeitSeqNextPlayer',
+      message: buildMimeItSyncStateMessage('NEXT_PLAYER'),
+      waitAfterMs: 1500,
+    },
+    {
+      label: 'mimeitSeqTurnRunning',
+      message: buildMimeItSyncStateMessage('TURN_RUNNING'),
+      waitAfterMs: 2200,
+    },
+    {
+      label: 'mimeitSeqHeartbeat',
+      message: { type: 'HEARTBEAT', version: '1' },
+      waitAfterMs: 700,
+    },
+    {
+      label: 'mimeitSeqResults',
+      message: buildMimeItSyncStateMessage('GAME_RESULTS'),
+      waitAfterMs: 0,
+    },
+  ];
+
+  mimeItSequenceRunning = true;
+  setMimeItSequenceUi(true);
+  pushLog('mimeit:sequence:start', {
+    steps: steps.map(step => step.label),
+  });
+
+  const completedSteps = [];
+  try {
+    for (const step of steps) {
+      const result = await sendMimeItMessage(step.label, step.message);
+      if (!result || result.success === false) {
+        throw new Error(result?.error || `Failed at step: ${step.label}`);
+      }
+      completedSteps.push(step.label);
+      if (step.waitAfterMs > 0) {
+        await sleep(step.waitAfterMs);
+      }
+    }
+
+    const summary = {
+      completed: true,
+      steps: completedSteps,
+    };
+    setResult(summary);
+    pushLog('mimeit:sequence:done', summary);
+    return summary;
+  } finally {
+    mimeItSequenceRunning = false;
+    setMimeItSequenceUi(false);
+  }
 }
 
 async function setupEventListeners() {
@@ -292,6 +487,57 @@ document.querySelector('#sendMessageBtn').addEventListener('click', () => {
   });
 });
 
+document.querySelector('#mimeitPresetBtn').addEventListener('click', () => {
+  const preset = applyMimeItPreset();
+  setResult({ presetApplied: true, ...preset });
+  pushLog('mimeit:preset', preset);
+});
+
+document.querySelector('#mimeitOpenReceiverBtn').addEventListener('click', () => {
+  window.open(MIMEIT_DEMO.receiverUrl, '_blank', 'noopener,noreferrer');
+  pushLog('mimeit:receiver', { url: MIMEIT_DEMO.receiverUrl });
+});
+
+document.querySelector('#mimeitResetBtn').addEventListener('click', () => {
+  sendMimeItMessage('mimeitReset', { type: 'RESET', version: '1' });
+});
+
+document.querySelector('#mimeitHeartbeatBtn').addEventListener('click', () => {
+  sendMimeItMessage('mimeitHeartbeat', {
+    type: 'HEARTBEAT',
+    version: '1',
+  });
+});
+
+document.querySelector('#mimeitIdleBtn').addEventListener('click', () => {
+  sendMimeItMessage('mimeitIdle', buildMimeItSyncStateMessage('IDLE'));
+});
+
+document.querySelector('#mimeitNextPlayerBtn').addEventListener('click', () => {
+  sendMimeItMessage(
+    'mimeitNextPlayer',
+    buildMimeItSyncStateMessage('NEXT_PLAYER'),
+  );
+});
+
+document.querySelector('#mimeitTurnRunningBtn').addEventListener('click', () => {
+  sendMimeItMessage(
+    'mimeitTurnRunning',
+    buildMimeItSyncStateMessage('TURN_RUNNING'),
+  );
+});
+
+document.querySelector('#mimeitResultsBtn').addEventListener('click', () => {
+  sendMimeItMessage(
+    'mimeitResults',
+    buildMimeItSyncStateMessage('GAME_RESULTS'),
+  );
+});
+
+document.querySelector('#mimeitSequenceBtn').addEventListener('click', () => {
+  callPlugin('mimeitSequence', () => runMimeItDemoSequence());
+});
+
 document.querySelector('#clearLogsBtn').addEventListener('click', () => {
   logsEl.textContent = '';
   setResult('(cleared)');
@@ -299,6 +545,7 @@ document.querySelector('#clearLogsBtn').addEventListener('click', () => {
 
 setResult({
   ready: true,
-  tip: 'Press Initialize first, then Request Session.',
+  tip: 'Press Initialize first, then Request Session. Use "Apply MimeIt Preset" for FB38EA42.',
 });
 pushLog('boot', { ready: true });
+setMimeItSequenceUi(false);
