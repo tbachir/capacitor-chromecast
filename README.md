@@ -1,6 +1,7 @@
 # @strasberry/capacitor-chromecast
 
 This is a plugin for Capacitor that enables Chromecast functionality for iOS and Android.
+This project is a fork of [hauxir/capacitor-chromecast](https://github.com/hauxir/capacitor-chromecast).
 
 ## Install
 
@@ -8,6 +9,13 @@ This is a plugin for Capacitor that enables Chromecast functionality for iOS and
 npm install @strasberry/capacitor-chromecast
 npx cap sync
 ```
+
+## iOS Integration Options
+
+By default, Capacitor iOS projects integrate this plugin through CocoaPods (`npx cap sync`).
+
+If your app uses Swift Package Manager for Capacitor plugins, this package also ships a `Package.swift`.
+You can add `@strasberry/capacitor-chromecast` as a Swift package (local or remote) and link the `StrasberryCapacitorChromecast` library product.
 
 Maintainers: see the [Publishing guide](./CONTRIBUTING.md#publishing) for release steps.
 

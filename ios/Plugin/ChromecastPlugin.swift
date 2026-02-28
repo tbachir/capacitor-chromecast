@@ -3,7 +3,30 @@ import Capacitor
 import GoogleCast
 
 @objc(ChromecastPlugin)
-public class ChromecastPlugin: CAPPlugin, ChromecastListener {
+public class ChromecastPlugin: CAPPlugin, CAPBridgedPlugin, ChromecastListener {
+
+    public let identifier = "ChromecastPlugin"
+    public let jsName = "Chromecast"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "initialize", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "requestSession", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "launchMedia", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "loadMedia", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "loadMediaWithHeaders", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "mediaPause", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "mediaPlay", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "mediaSeek", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "mediaNext", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "mediaPrev", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "sessionStop", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "sessionLeave", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "startRouteScan", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "stopRouteScan", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "selectRoute", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "sendMessage", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "addMessageListener", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "networkDiagnostic", returnType: CAPPluginReturnPromise)
+    ]
 
     // MARK: - Lifecycle
     public override func load() {

@@ -11,6 +11,7 @@
     "android/build.gradle",
     "dist/",
     "ios/Plugin/",
+    "Package.swift",
     "StrasberryCapacitorChromecast.podspec"
   ],
   "author": "Dimitar Todorov",
