@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chromecast Plugin Example</title>
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1>Chromecast Plugin Example</h1>
+        <p>
+          Real integration demo for
+          <code>@strasberry/capacitor-chromecast</code>
+        </p>
+        <p id="platform"></p>
+      </header>
+
+      <section class="card">
+        <h2>Setup</h2>
+        <label for="appId">Receiver App ID (optional)</label>
+        <input
+          id="appId"
+          placeholder="CC1AD845 (default receiver if empty)"
+          value=""
+        />
+        <div class="row">
+          <button id="initializeBtn">Initialize</button>
+          <button id="networkBtn">Network Diagnostic</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Session</h2>
+        <div class="row">
+          <button id="requestSessionBtn">Request Session</button>
+          <button id="startScanBtn">Start Route Scan</button>
+          <button id="stopScanBtn">Stop Route Scan</button>
+        </div>
+        <label for="routeSelect">Discovered Route</label>
+        <select id="routeSelect">
+          <option value="">No routes yet</option>
+        </select>
+        <div class="row">
+          <button id="selectRouteBtn">Select Route</button>
+          <button id="sessionLeaveBtn">Leave Session</button>
+          <button id="sessionStopBtn">Stop Session</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Media</h2>
+        <label for="mediaUrl">Media URL</label>
+        <input
+          id="mediaUrl"
+          value="https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+        />
+        <label for="contentType">Content Type</label>
+        <input id="contentType" value="video/mp4" />
+        <div class="row">
+          <button id="launchMediaBtn">Launch Media</button>
+          <button id="loadMediaBtn">Load Media (Full)</button>
+        </div>
+        <div class="row">
+          <button id="mediaPlayBtn">Play</button>
+          <button id="mediaPauseBtn">Pause</button>
+          <button id="mediaPrevBtn">Prev</button>
+          <button id="mediaNextBtn">Next</button>
+        </div>
+        <label for="seekInput">Seek (seconds)</label>
+        <div class="row">
+          <input id="seekInput" type="number" min="0" value="30" />
+          <button id="mediaSeekBtn">Seek</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Custom Receiver Messages</h2>
+        <label for="namespaceInput">Namespace</label>
+        <input id="namespaceInput" value="urn:x-cast:com.example.cast" />
+        <label for="messageInput">Message JSON</label>
+        <textarea id="messageInput" rows="4">
+{"type":"ping","from":"capacitor-example"}
+        </textarea>
+        <div class="row">
+          <button id="addMessageListenerBtn">Add Listener</button>
+          <button id="removeMessageListenerBtn">Remove Listener</button>
+          <button id="sendMessageBtn">Send Message</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Last Result</h2>
+        <pre id="result">(no call yet)</pre>
+      </section>
+
+      <section class="card">
+        <h2>Event Log</h2>
+        <button id="clearLogsBtn">Clear Logs</button>
+        <pre id="logs"></pre>
+      </section>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

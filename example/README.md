@@ -51,6 +51,6 @@ npm run cap:open:ios
 - `requestSession()` opens the cast device picker.
 - Use a valid Cast `appId` for custom receivers, or leave empty for default receiver.
 - On iOS, `appId` is fixed after the first `initialize()` of the current app launch. Restart the app to switch to another receiver `appId`.
-- This plugin uses an iOS `.podspec`, so CocoaPods is required for iOS integration.
+- This specific example uses CocoaPods for iOS. For SPM iOS integration, use [`../example-spm`](../example-spm).
 - The example iOS app includes `NSLocalNetworkUsageDescription` and `NSBonjourServices` (`_googlecast._tcp`, `_CC1AD845._googlecast._tcp`) in `Info.plist` for Cast discovery.
 - If you use a custom receiver app ID, replace `CC1AD845` in `Info.plist` with your own app ID.

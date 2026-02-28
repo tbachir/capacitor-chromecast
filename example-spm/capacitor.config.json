@@ -1,0 +1,14 @@
+{
+  "appId": "com.strasberry.chromecast.example.spm",
+  "appName": "ChromecastExampleSPM",
+  "bundledWebRuntime": true,
+  "webDir": "www",
+  "ios": {
+    "minVersion": "15.0"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    }
+  }
+}

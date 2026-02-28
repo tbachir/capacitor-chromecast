@@ -19,9 +19,10 @@ You can add `@strasberry/capacitor-chromecast` as a Swift package (local or remo
 
 Maintainers: see the [Publishing guide](./CONTRIBUTING.md#publishing) for release steps.
 
-## Real Example App
+## Real Example Apps
 
-A complete runnable demo app is available in [`example/`](./example).
+- CocoaPods-oriented app: [`example/`](./example)
+- SPM-oriented app: [`example-spm/`](./example-spm)
 
 ```bash
 cd example
@@ -31,7 +32,8 @@ npm run cap:add:android
 npm run dev
 ```
 
-For native sync and opening platform projects, see [`example/README.md`](./example/README.md).
+For SPM-specific iOS setup, see [`example-spm/README.md`](./example-spm/README.md).
+For CocoaPods setup, see [`example/README.md`](./example/README.md).
 
 ## iOS Local Network Permissions
 
