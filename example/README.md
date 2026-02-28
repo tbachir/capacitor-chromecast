@@ -1,12 +1,43 @@
-## Created with Capacitor Create App
+# Chromecast Plugin Real Example
 
-This app was created using [`@capacitor/create-app`](https://github.com/ionic-team/create-capacitor-app),
-and comes with a very minimal shell for building an app.
+This folder contains a real Capacitor example app using `@strasberry/capacitor-chromecast`.
 
-### Running this example
+## What is included
 
-To run the provided example, you can use [serve](https://www.npmjs.com/package/serve):
+- A Vite web app (`src/`) built to `www/` for Capacitor
+- Controls for initialization, scan/session, media control, diagnostics
+- Live event log for plugin events (`SESSION_STARTED`, `SESSION_ENDED`, `RECEIVER_MESSAGE`, etc.)
+
+## Run in browser
 
 ```bash
-npx serve
+cd example
+npm install
+npm run dev
 ```
+
+## Build + sync for native
+
+```bash
+cd example
+npm install
+npm run cap:add:ios
+npm run cap:add:android
+npm run cap:sync
+```
+
+Then open the platform project:
+
+```bash
+npm run cap:open:ios
+# or
+npm run cap:open:android
+```
+
+If a platform is already added, `cap:add:*` can be skipped.
+
+## Notes
+
+- On web, route scanning is limited by the Google Cast Web SDK.
+- `requestSession()` opens the cast device picker.
+- Use a valid Cast `appId` for custom receivers, or leave empty for default receiver.

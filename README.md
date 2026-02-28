@@ -11,6 +11,20 @@ npx cap sync
 
 Maintainers: see the [Publishing guide](./CONTRIBUTING.md#publishing) for release steps.
 
+## Real Example App
+
+A complete runnable demo app is available in [`example/`](./example).
+
+```bash
+cd example
+npm install
+npm run cap:add:ios
+npm run cap:add:android
+npm run dev
+```
+
+For native sync and opening platform projects, see [`example/README.md`](./example/README.md).
+
 ## API
 
 <docgen-index>

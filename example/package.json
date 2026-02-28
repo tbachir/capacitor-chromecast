@@ -1,24 +1,34 @@
 {
-  "name": "capacitor-app",
+  "name": "chromecast-plugin-example",
+  "private": true,
   "version": "1.0.0",
-  "description": "An Amazing Capacitor App",
+  "description": "Real usage example for @strasberry/capacitor-chromecast",
+  "type": "module",
   "main": "index.js",
   "keywords": [
     "capacitor",
-    "mobile"
+    "chromecast",
+    "example"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "cap:add:ios": "npx cap add ios",
+    "cap:add:android": "npx cap add android",
+    "cap:sync": "npm run build && npx cap sync",
+    "cap:open:ios": "npm run cap:sync && npx cap open ios",
+    "cap:open:android": "npm run cap:sync && npx cap open android"
   },
   "dependencies": {
     "@capacitor/core": "latest",
-    "@capacitor/camera": "latest",
     "@capacitor/splash-screen": "latest",
     "@strasberry/capacitor-chromecast": "file:.."
   },
   "devDependencies": {
-    "@capacitor/cli": "latest"
+    "@capacitor/cli": "latest",
+    "vite": "latest"
   },
-  "author": "",
+  "author": "strasberry",
   "license": "ISC"
 }
