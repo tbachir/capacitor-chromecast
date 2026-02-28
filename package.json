@@ -1,5 +1,5 @@
 {
-  "name": "@hauxir2/capacitor-chromecast",
+  "name": "@tbachir/capacitor-chromecast",
   "version": "0.0.7",
   "description": "This is a plugin for Capacitor that enables Chromecast functionality for iOS and Android.",
   "main": "dist/plugin.cjs.js",
@@ -11,7 +11,7 @@
     "android/build.gradle",
     "dist/",
     "ios/Plugin/",
-    "HauxirCapacitorChromecast.podspec"
+    "TbachirCapacitorChromecast.podspec"
   ],
   "author": "Dimitar Todorov",
   "license": "MIT",
@@ -21,10 +21,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hauxir/capacitor-chromecast.git"
+    "url": "git+https://github.com/tbachir/capacitor-chromecast.git"
   },
   "bugs": {
-    "url": "https://github.com/hauxir/capacitor-chromecast/issues"
+    "url": "https://github.com/tbachir/capacitor-chromecast/issues"
   },
   "keywords": [
     "capacitor",

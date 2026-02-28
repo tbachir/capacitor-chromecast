@@ -1,4 +1,4 @@
-package com.hauxir.plugins.chromecast.lib;
+package com.tbachir.plugins.chromecast;
 
 import android.content.Context;
 import com.google.android.gms.cast.framework.CastOptions;
@@ -6,22 +6,15 @@ import com.google.android.gms.cast.framework.OptionsProvider;
 import com.google.android.gms.cast.framework.SessionProvider;
 import java.util.List;
 
-public final class CastOptionsProvider implements OptionsProvider {
-
-    /** The app id. */
-    private static String appId;
-
-    /**
-     * Sets the app ID.
-     * @param applicationId appId
-     */
-    public static void setAppId(String applicationId) {
-        appId = applicationId;
-    }
+public class CastOptionsProvider implements OptionsProvider {
 
     @Override
     public CastOptions getCastOptions(Context context) {
-        return new CastOptions.Builder().setReceiverApplicationId(appId).build();
+        CastOptions castOptions = new CastOptions.Builder()
+            .setReceiverApplicationId(context.getString(R.string.app_id))
+            .setReceiverApplicationId(context.getString(R.string.app_id))
+            .build();
+        return castOptions;
     }
 
     @Override

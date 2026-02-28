@@ -1,4 +1,4 @@
-package com.hauxir.plugins.chromecast;
+package com.tbachir.plugins.chromecast;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -20,7 +20,7 @@ import com.google.android.gms.cast.framework.CastState;
 import com.google.android.gms.cast.framework.CastStateListener;
 import com.google.android.gms.cast.framework.SessionManager;
 import com.google.android.gms.cast.framework.SessionManagerListener;
-import com.hauxir.plugins.chromecast.lib.CastOptionsProvider;
+import com.tbachir.plugins.chromecast.lib.CastOptionsProvider;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.cordova.CallbackContext;

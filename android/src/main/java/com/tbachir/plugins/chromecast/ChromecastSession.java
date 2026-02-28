@@ -1,4 +1,4 @@
-package com.hauxir.plugins.chromecast;
+package com.tbachir.plugins.chromecast;
 
 import android.app.Activity;
 import androidx.annotation.NonNull;
