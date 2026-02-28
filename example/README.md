@@ -52,5 +52,5 @@ npm run cap:open:ios
 - Use a valid Cast `appId` for custom receivers, or leave empty for default receiver.
 - On iOS, `appId` is fixed after the first `initialize()` of the current app launch. Restart the app to switch to another receiver `appId`.
 - This specific example uses CocoaPods for iOS. For SPM iOS integration, use [`../example-spm`](../example-spm).
-- The example iOS app includes `NSLocalNetworkUsageDescription` and `NSBonjourServices` (`_googlecast._tcp`, `_CC1AD845._googlecast._tcp`) in `Info.plist` for Cast discovery.
-- If you use a custom receiver app ID, replace `CC1AD845` in `Info.plist` with your own app ID.
+- The example iOS app includes `NSLocalNetworkUsageDescription` and `NSBonjourServices` (`_googlecast._tcp`, `_FB38EA42._googlecast._tcp`) in `Info.plist` for Cast discovery.
+- If you use a custom receiver app ID, replace `FB38EA42` in `Info.plist` with your own app ID.

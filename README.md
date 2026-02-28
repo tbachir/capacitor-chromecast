@@ -45,11 +45,11 @@ For Cast discovery, add local network privacy keys to your iOS app `Info.plist`:
 <key>NSBonjourServices</key>
 <array>
   <string>_googlecast._tcp</string>
-  <string>_CC1AD845._googlecast._tcp</string>
+  <string>_FB38EA42._googlecast._tcp</string>
 </array>
 ```
 
-Replace `CC1AD845` with your receiver App ID if you use a custom receiver.
+Replace `FB38EA42` with your receiver App ID if you use a custom receiver.
 
 If missing, you can see warnings like: `Key NSBonjourServices is missing in Info.plist`.
 

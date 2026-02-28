@@ -37,7 +37,7 @@ class ChromecastTests: XCTestCase {
     func testInitializeWithCustomAppId() {
         let expectation = XCTestExpectation(description: "Initialize with custom appId")
         let mockListener = MockChromecastListener()
-        let customAppId = "CC1AD845"
+        let customAppId = "FB38EA42"
 
         chromecast.initialize(appId: customAppId, listener: mockListener) { error in
             XCTAssertNil(error, "Initialize should not return error with custom appId")
@@ -714,7 +714,7 @@ class ChromecastDataConversionTests: XCTestCase {
 
     func testSessionObjectStructure() {
         let sessionObject: [String: Any] = [
-            "appId": "CC1AD845",
+            "appId": "FB38EA42",
             "displayName": "Default Media Receiver",
             "sessionId": "session-123",
             "receiver": [
@@ -729,7 +729,7 @@ class ChromecastDataConversionTests: XCTestCase {
             "status": "connected"
         ]
 
-        XCTAssertEqual(sessionObject["appId"] as? String, "CC1AD845")
+        XCTAssertEqual(sessionObject["appId"] as? String, "FB38EA42")
         XCTAssertEqual(sessionObject["sessionId"] as? String, "session-123")
         XCTAssertEqual(sessionObject["status"] as? String, "connected")
 

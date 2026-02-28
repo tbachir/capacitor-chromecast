@@ -37,10 +37,12 @@ npm run cap:open:ios
 
 ## iOS local network permissions
 
-For Cast discovery, add these keys in `ios/App/App/Info.plist`:
+This example patches `ios/App/App/Info.plist` automatically after `cap:add:ios` and `cap:sync` to include:
 
 - `NSLocalNetworkUsageDescription`
-- `NSBonjourServices` with `_googlecast._tcp` and your receiver service `_CC1AD845._googlecast._tcp`
+- `NSBonjourServices` with `_googlecast._tcp` and `_FB38EA42._googlecast._tcp`
+
+If you use another receiver app ID, replace `_FB38EA42._googlecast._tcp` with your own service.
 
 ## Notes
 

@@ -16,10 +16,11 @@
     "build": "vite build",
     "preview": "vite preview",
     "cap:fix:ios-target": "node ./scripts/fix-ios-target.mjs",
-    "cap:add:ios": "npx cap add ios --packagemanager SPM && npm run cap:fix:ios-target",
+    "cap:fix:ios-cast-permissions": "node ./scripts/ensure-ios-cast-permissions.mjs",
+    "cap:add:ios": "npx cap add ios --packagemanager SPM && npm run cap:fix:ios-target && npm run cap:fix:ios-cast-permissions",
     "cap:reset:ios": "rm -rf ios && npm run cap:add:ios",
     "cap:add:android": "npx cap add android",
-    "cap:sync": "npm run build && npm run cap:fix:ios-target && npx cap sync",
+    "cap:sync": "npm run build && npm run cap:fix:ios-target && npx cap sync && npm run cap:fix:ios-cast-permissions",
     "cap:open:ios": "npm run cap:sync && npx cap open ios",
     "cap:open:android": "npm run cap:sync && npx cap open android"
   },
