@@ -252,3 +252,50 @@ Tu peux verifier notamment:
 - `isWiFi`
 - `castConnectionAvailable`
 
+## 9. Service global pour Ionic Angular standalone
+
+Si ton app est en Angular standalone, tu peux partir de ce service injectable:
+
+- `snippets/ionic-angular-standalone/chromecast.service.ts`
+
+Points clefs:
+- `@Injectable({ providedIn: 'root' })` pour etre disponible partout.
+- `state` en **Signal** (Angular moderne) + `state$` pour interop RxJS.
+- selecteurs `computed` (`session`, `receiverAvailable`, etc.) prets pour le template.
+- listeners plugin centralises dans le service.
+
+Exemple d'utilisation dans un composant standalone:
+
+```ts
+import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { IonButton } from '@ionic/angular/standalone';
+import { ChromecastService } from './services/chromecast.service';
+
+@Component({
+  selector: 'app-cast-demo',
+  standalone: true,
+  imports: [CommonModule, IonButton],
+  template: `
+    <ion-button (click)="start()">Caster une video</ion-button>
+    @if (cast.session(); as session) {
+      <p>Session active: {{ session.receiver.friendlyName }}</p>
+    }
+  `,
+})
+export class CastDemoComponent {
+  readonly cast = inject(ChromecastService);
+
+  async start(): Promise<void> {
+    await this.cast.requestSession();
+    await this.cast.loadMedia({
+      contentId:
+        'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+      contentType: 'video/mp4',
+      streamType: 'BUFFERED',
+      autoPlay: true,
+      currentTime: 0,
+    });
+  }
+}
+```
