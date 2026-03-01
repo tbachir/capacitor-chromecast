@@ -518,6 +518,28 @@ enum ChromecastError: Error, LocalizedError {
         }
     }
 
+    /// Remove a message listener for a namespace
+    public func removeMessageListener(namespace: String, completion: @escaping (Error?) -> Void) {
+        DispatchQueue.main.async { [weak self] () -> Void in
+            guard let self = self else {
+                completion(ChromecastError.notInitialized)
+                return
+            }
+
+            let channel = self.messageChannels.removeValue(forKey: namespace)
+            guard let channel = channel else {
+                completion(nil)
+                return
+            }
+
+            if let session = self.currentSession {
+                session.remove(channel)
+            }
+
+            completion(nil)
+        }
+    }
+
     // MARK: - Network Diagnostic
 
     /// Get network diagnostic information

@@ -6,3 +6,27 @@ www/
 *.map
 .DS_Store
 .sourcemaps
+
+# Native platform files (generated or machine-specific)
+ios/App/Pods/
+ios/App/build/
+ios/App/output/
+ios/App/App/public/
+ios/DerivedData/
+ios/**/xcuserdata/
+ios/capacitor-cordova-ios-plugins/
+ios/App/App/capacitor.config.json
+ios/App/App/config.xml
+
+android/.gradle/
+android/.idea/
+android/local.properties
+android/captures/
+android/build/
+android/**/build/
+android/.cxx/
+android/**/.cxx/
+android/**/.externalNativeBuild/
+android/**/*.iml
+android/**/*.keystore
+android/**/*.jks

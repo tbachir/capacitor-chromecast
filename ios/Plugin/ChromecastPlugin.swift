@@ -8,23 +8,24 @@ public class ChromecastPlugin: CAPPlugin, CAPBridgedPlugin, ChromecastListener {
     public let identifier = "ChromecastPlugin"
     public let jsName = "Chromecast"
     public let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "initialize", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "initialize", returnType: CAPPluginReturnNone),
         CAPPluginMethod(name: "requestSession", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "launchMedia", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "loadMedia", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "loadMediaWithHeaders", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "mediaPause", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "mediaPlay", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "mediaSeek", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "mediaNext", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "mediaPrev", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "sessionStop", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "sessionLeave", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "mediaPause", returnType: CAPPluginReturnNone),
+        CAPPluginMethod(name: "mediaPlay", returnType: CAPPluginReturnNone),
+        CAPPluginMethod(name: "mediaSeek", returnType: CAPPluginReturnNone),
+        CAPPluginMethod(name: "mediaNext", returnType: CAPPluginReturnNone),
+        CAPPluginMethod(name: "mediaPrev", returnType: CAPPluginReturnNone),
+        CAPPluginMethod(name: "sessionStop", returnType: CAPPluginReturnNone),
+        CAPPluginMethod(name: "sessionLeave", returnType: CAPPluginReturnNone),
         CAPPluginMethod(name: "startRouteScan", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "stopRouteScan", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "stopRouteScan", returnType: CAPPluginReturnNone),
         CAPPluginMethod(name: "selectRoute", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "sendMessage", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "addMessageListener", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "addMessageListener", returnType: CAPPluginReturnNone),
+        CAPPluginMethod(name: "removeMessageListener", returnType: CAPPluginReturnNone),
         CAPPluginMethod(name: "networkDiagnostic", returnType: CAPPluginReturnPromise)
     ]
 
@@ -55,8 +56,7 @@ public class ChromecastPlugin: CAPPlugin, CAPBridgedPlugin, ChromecastListener {
     // MARK: - Plugin Methods
 
     @objc func initialize(_ call: CAPPluginCall) {
-        print("🔴🔴🔴 ChromecastPlugin initialize() called 🔴🔴🔴")
-        let requestedAppId = call.getString("appId") ?? kGCKDefaultMediaReceiverApplicationID
+        let requestedAppId = resolveAppId(from: call)
 
         // Ensure main thread execution
         DispatchQueue.main.async { [weak self] in
@@ -90,6 +90,24 @@ public class ChromecastPlugin: CAPPlugin, CAPBridgedPlugin, ChromecastListener {
                 }
             }
         }
+    }
+
+    private func resolveAppId(from call: CAPPluginCall) -> String {
+        let callAppId = call.getString("appId")?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let callAppId = callAppId, !callAppId.isEmpty {
+            return callAppId
+        }
+
+        let configuredAppId = bridge?
+            .config
+            .getPluginConfig("Chromecast")
+            .getString("appId")?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if let configuredAppId = configuredAppId, !configuredAppId.isEmpty {
+            return configuredAppId
+        }
+
+        return kGCKDefaultMediaReceiverApplicationID
     }
 
     @objc func requestSession(_ call: CAPPluginCall) {
@@ -403,6 +421,28 @@ public class ChromecastPlugin: CAPPlugin, CAPBridgedPlugin, ChromecastListener {
         }
     }
 
+    @objc func removeMessageListener(_ call: CAPPluginCall) {
+        guard let namespace = call.getString("namespace") else {
+            call.reject("namespace is required")
+            return
+        }
+
+        guard let implementation = implementation, isInitialized else {
+            call.reject("Plugin not initialized")
+            return
+        }
+
+        DispatchQueue.main.async {
+            implementation.removeMessageListener(namespace: namespace) { error in
+                if let error = error {
+                    call.reject(error.localizedDescription)
+                } else {
+                    call.resolve()
+                }
+            }
+        }
+    }
+
     // MARK: - Diagnostic Methods
 
     @objc func networkDiagnostic(_ call: CAPPluginCall) {
@@ -530,7 +570,10 @@ public class ChromecastPlugin: CAPPlugin, CAPBridgedPlugin, ChromecastListener {
     }
 
     public func onReceiverAvailableUpdate(_ available: Bool) {
-        notifyListeners(EVENT_RECEIVER_LISTENER, data: ["isAvailable": available])
+        notifyListeners(EVENT_RECEIVER_LISTENER, data: [
+            "available": available,
+            "isAvailable": available
+        ])
     }
 
     public func onMediaLoaded(_ media: [String: Any]) {

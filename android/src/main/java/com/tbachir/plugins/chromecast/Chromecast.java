@@ -13,6 +13,7 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.google.android.gms.cast.CastDevice;
+import com.google.android.gms.cast.CastMediaControlIntent;
 import com.google.android.gms.cast.framework.CastSession;
 import com.google.android.gms.cast.framework.Session;
 import com.google.android.gms.common.ConnectionResult;
@@ -56,24 +57,11 @@ public class Chromecast extends Plugin {
      * For now, ignore the autoJoinPolicy and defaultActionPolicy; those will come later
      *
      * @param pluginCall called with .success or .error depending on the result
-     * @return true for cordova
      */
-    @PluginMethod
-    public boolean initialize(final PluginCall pluginCall) {
-        String appId = pluginCall.getString("appId");
+    @PluginMethod(returnType = PluginMethod.RETURN_NONE)
+    public void initialize(final PluginCall pluginCall) {
+        String appId = resolveAppId(pluginCall);
         Log.d(TAG, "Initialize called with App ID: " + appId);
-
-        if (appId == null || appId.isEmpty()) {
-            Log.e(TAG, "App ID is null or empty");
-            pluginCall.reject("App ID is required");
-            return false;
-        }
-
-        Log.d(TAG, "App ID validation passed: " + appId);
-        // tab_and_origin_scoped | origin_scoped | page_scoped
-        String autoJoinPolicy = pluginCall.getString("autoJoinPolicy");
-        // create_session | cast_this_tab
-        String defaultActionPolicy = pluginCall.getString("defaultActionPolicy");
 
         setup();
 
@@ -212,7 +200,10 @@ public class Chromecast extends Plugin {
 
                         @Override
                         public void onReceiverAvailableUpdate(boolean available) {
-                            sendEvent("RECEIVER_LISTENER", new JSObject().put("isAvailable", available));
+                            sendEvent(
+                                "RECEIVER_LISTENER",
+                                new JSObject().put("available", available).put("isAvailable", available)
+                            );
                         }
 
                         @Override
@@ -250,7 +241,6 @@ public class Chromecast extends Plugin {
         }
 
         connection.initialize(appId, pluginCall);
-        return true;
     }
 
     /**
@@ -403,11 +393,15 @@ public class Chromecast extends Plugin {
      *
      * @param pluginCall called with .success or .error depending on the result
      */
-    @PluginMethod
+    @PluginMethod(returnType = PluginMethod.RETURN_NONE)
     public void addMessageListener(PluginCall pluginCall) {
         String namespace = pluginCall.getString("namespace");
         if (namespace == null) {
             pluginCall.reject("namespace is required");
+            return;
+        }
+        if (connection == null) {
+            pluginCall.reject("Plugin not initialized");
             return;
         }
         if (this.media == null) this.media = connection.getChromecastSession();
@@ -417,6 +411,32 @@ public class Chromecast extends Plugin {
             return;
         }
         this.media.addMessageListener(namespace);
+        pluginCall.resolve();
+    }
+
+    /**
+     * Removes a listener for a specific namespace.
+     *
+     * @param pluginCall called with .success or .error depending on the result
+     */
+    @PluginMethod(returnType = PluginMethod.RETURN_NONE)
+    public void removeMessageListener(PluginCall pluginCall) {
+        String namespace = pluginCall.getString("namespace");
+        if (namespace == null) {
+            pluginCall.reject("namespace is required");
+            return;
+        }
+        if (connection == null) {
+            pluginCall.reject("Plugin not initialized");
+            return;
+        }
+        if (this.media == null) this.media = connection.getChromecastSession();
+        if (this.media == null) {
+            Log.d(TAG, "removeMessageListener: Session not found");
+            pluginCall.reject("No active session");
+            return;
+        }
+        this.media.removeMessageListener(namespace);
         pluginCall.resolve();
     }
 
@@ -621,7 +641,7 @@ public class Chromecast extends Plugin {
      *
      * @param pluginCall called with .success or .error depending on the result
      */
-    @PluginMethod
+    @PluginMethod(returnType = PluginMethod.RETURN_NONE)
     public void mediaPause(PluginCall pluginCall) {
         if (this.media == null) this.media = connection.getChromecastSession();
         if (this.media == null) {
@@ -638,7 +658,7 @@ public class Chromecast extends Plugin {
      *
      * @param pluginCall called with .success or .error depending on the result
      */
-    @PluginMethod
+    @PluginMethod(returnType = PluginMethod.RETURN_NONE)
     public void mediaPlay(PluginCall pluginCall) {
         if (this.media == null) this.media = connection.getChromecastSession();
         if (this.media == null) {
@@ -655,7 +675,7 @@ public class Chromecast extends Plugin {
      *
      * @param pluginCall called with .success or .error depending on the result
      */
-    @PluginMethod
+    @PluginMethod(returnType = PluginMethod.RETURN_NONE)
     public void mediaSeek(PluginCall pluginCall) {
         if (this.media == null) this.media = connection.getChromecastSession();
         if (this.media == null) {
@@ -673,7 +693,7 @@ public class Chromecast extends Plugin {
      *
      * @param pluginCall called with .success or .error depending on the result
      */
-    @PluginMethod
+    @PluginMethod(returnType = PluginMethod.RETURN_NONE)
     public void mediaNext(PluginCall pluginCall) {
         if (this.media == null) this.media = connection.getChromecastSession();
         if (this.media == null) {
@@ -690,7 +710,7 @@ public class Chromecast extends Plugin {
      *
      * @param pluginCall called with .success or .error depending on the result
      */
-    @PluginMethod
+    @PluginMethod(returnType = PluginMethod.RETURN_NONE)
     public void mediaPrev(PluginCall pluginCall) {
         if (this.media == null) this.media = connection.getChromecastSession();
         if (this.media == null) {
@@ -706,24 +726,20 @@ public class Chromecast extends Plugin {
      * Stops the session.
      *
      * @param pluginCall called with .success or .error depending on the result
-     * @return true for cordova
      */
-    @PluginMethod
-    public boolean sessionStop(PluginCall pluginCall) {
+    @PluginMethod(returnType = PluginMethod.RETURN_NONE)
+    public void sessionStop(PluginCall pluginCall) {
         connection.endSession(true, pluginCall);
-        return true;
     }
 
     /**
      * Stops the session.
      *
      * @param pluginCall called with .success or .error depending on the result
-     * @return true for cordova
      */
-    @PluginMethod
-    public boolean sessionLeave(PluginCall pluginCall) {
+    @PluginMethod(returnType = PluginMethod.RETURN_NONE)
+    public void sessionLeave(PluginCall pluginCall) {
         connection.endSession(false, pluginCall);
-        return true;
     }
 
     /**
@@ -760,7 +776,8 @@ public class Chromecast extends Plugin {
                             }
                         }
                     };
-                connection.startRouteScan(null, clientScan, null);
+                Long timeout = pluginCall.getLong("timeout");
+                connection.startRouteScan(timeout, clientScan, null);
             }
         };
         if (clientScan != null) {
@@ -775,10 +792,9 @@ public class Chromecast extends Plugin {
      * Stops the scan started by startRouteScan.
      *
      * @param pluginCall called with .success or .error depending on the result
-     * @return true for cordova
      */
-    @PluginMethod
-    public boolean stopRouteScan(final PluginCall pluginCall) {
+    @PluginMethod(returnType = PluginMethod.RETURN_NONE)
+    public void stopRouteScan(final PluginCall pluginCall) {
         connection.stopRouteScan(
             clientScan,
             new Runnable() {
@@ -792,7 +808,6 @@ public class Chromecast extends Plugin {
                 }
             }
         );
-        return true;
     }
 
     /**
@@ -907,5 +922,28 @@ public class Chromecast extends Plugin {
      */
     private void sendEvent(String eventName, JSObject args) {
         notifyListeners(eventName, args);
+    }
+
+    /**
+     * Resolve appId from initialize call, then Capacitor configuration, then Cast default.
+     */
+    private String resolveAppId(PluginCall pluginCall) {
+        String callAppId = pluginCall.getString("appId");
+        if (callAppId != null) {
+            callAppId = callAppId.trim();
+        }
+        if (callAppId != null && !callAppId.isEmpty()) {
+            return callAppId;
+        }
+
+        String configuredAppId = getConfig().getString("appId", null);
+        if (configuredAppId != null) {
+            configuredAppId = configuredAppId.trim();
+        }
+        if (configuredAppId != null && !configuredAppId.isEmpty()) {
+            return configuredAppId;
+        }
+
+        return CastMediaControlIntent.DEFAULT_MEDIA_RECEIVER_APPLICATION_ID;
     }
 }

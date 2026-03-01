@@ -7,9 +7,9 @@ on:
     branches: [main, master]
 
 jobs:
-  # TypeScript/JavaScript linting and build
+  # TypeScript/JavaScript linting, build, and API contract checks
   web:
-    name: Web (Lint & Build)
+    name: Web (Lint, Build & Contract)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -35,6 +35,9 @@ jobs:
 
       - name: Type check
         run: npx tsc --noEmit
+
+      - name: Validate plugin API contract
+        run: npm run test:contract
 
   # Android build and tests
   android:
@@ -127,12 +130,19 @@ jobs:
         working-directory: ios
         run: pod install
 
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: Install xcpretty
+        run: gem install xcpretty
+
       - name: Run SwiftLint
-        run: npm run swiftlint -- lint ios/Plugin --reporter github-actions-logging || true
+        run: npm run swiftlint -- lint ios/Plugin --reporter github-actions-logging
 
       - name: Build iOS
         working-directory: ios
         run: |
+          set -o pipefail
           xcodebuild build \
             -workspace Plugin.xcworkspace \
             -scheme Plugin \
@@ -144,6 +154,7 @@ jobs:
       - name: Run iOS Unit Tests
         working-directory: ios
         run: |
+          set -o pipefail
           xcodebuild test \
             -workspace Plugin.xcworkspace \
             -scheme Plugin \

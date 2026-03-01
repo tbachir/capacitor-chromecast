@@ -310,7 +310,10 @@ export class ChromecastWeb
     if (this.contextSetup) {
       const { CastState } = window.cast.framework;
       const available = context.getCastState() !== CastState.NO_DEVICES_AVAILABLE;
-      this.notifyListeners('RECEIVER_LISTENER', { available });
+      this.notifyListeners('RECEIVER_LISTENER', {
+        available,
+        isAvailable: available,
+      });
       return;
     }
     this.contextSetup = true;
@@ -323,7 +326,10 @@ export class ChromecastWeb
         const castEvent = event as CastStateEvent;
         const available =
           castEvent.castState !== CastState.NO_DEVICES_AVAILABLE;
-        this.notifyListeners('RECEIVER_LISTENER', { available });
+        this.notifyListeners('RECEIVER_LISTENER', {
+          available,
+          isAvailable: available,
+        });
       },
     );
 
@@ -363,7 +369,10 @@ export class ChromecastWeb
     // Emit initial receiver availability
     const initialState = context.getCastState();
     const available = initialState !== CastState.NO_DEVICES_AVAILABLE;
-    this.notifyListeners('RECEIVER_LISTENER', { available });
+    this.notifyListeners('RECEIVER_LISTENER', {
+      available,
+      isAvailable: available,
+    });
 
     // Initialize RemotePlayer and RemotePlayerController for media control
     this.remotePlayer = new window.cast.framework.RemotePlayer();

@@ -133,6 +133,12 @@ public class ChromecastTest {
     }
 
     @Test
+    public void testHasRemoveMessageListenerMethod() throws NoSuchMethodException {
+        Method method = Chromecast.class.getMethod("removeMessageListener", com.getcapacitor.PluginCall.class);
+        assertNotNull("removeMessageListener method should exist", method);
+    }
+
+    @Test
     public void testHasNetworkDiagnosticMethod() throws NoSuchMethodException {
         Method method = Chromecast.class.getMethod("networkDiagnostic", com.getcapacitor.PluginCall.class);
         assertNotNull("networkDiagnostic method should exist", method);
@@ -338,6 +344,7 @@ public class ChromecastTest {
             "stopRouteScan",
             "sendMessage",
             "addMessageListener",
+            "removeMessageListener",
             "networkDiagnostic"
         };
 

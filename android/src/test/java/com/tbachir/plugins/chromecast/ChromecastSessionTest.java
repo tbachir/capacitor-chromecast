@@ -25,6 +25,12 @@ public class ChromecastSessionTest {
     }
 
     @Test
+    public void testHasRemoveMessageListenerMethod() throws NoSuchMethodException {
+        Method method = ChromecastSession.class.getMethod("removeMessageListener", String.class);
+        assertNotNull("removeMessageListener method should exist", method);
+    }
+
+    @Test
     public void testHasSendMessageMethod() throws NoSuchMethodException {
         Method method =
             ChromecastSession.class.getMethod(

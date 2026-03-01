@@ -56,6 +56,31 @@ If missing, you can see warnings like: `Key NSBonjourServices is missing in Info
 
 On iOS, the Cast SDK keeps the first initialized receiver `appId` for the current app launch. To test another `appId`, fully restart the app, then initialize again.
 
+## Configuration
+
+You can set a default receiver app ID in `capacitor.config.*`:
+
+```ts
+/// <reference types="@capacitor/cli" />
+
+import { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  plugins: {
+    Chromecast: {
+      appId: 'CC1AD845',
+    },
+  },
+};
+
+export default config;
+```
+
+Resolution order for `appId`:
+- `initialize({ appId })` runtime option
+- `plugins.Chromecast.appId` from Capacitor config
+- Google Cast default receiver (`CC1AD845`)
+
 ## API
 
 <docgen-index>

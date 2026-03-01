@@ -89,7 +89,10 @@ var capacitorChromecast = (function (exports, core) {
             if (this.contextSetup) {
                 const { CastState } = window.cast.framework;
                 const available = context.getCastState() !== CastState.NO_DEVICES_AVAILABLE;
-                this.notifyListeners('RECEIVER_LISTENER', { available });
+                this.notifyListeners('RECEIVER_LISTENER', {
+                    available,
+                    isAvailable: available,
+                });
                 return;
             }
             this.contextSetup = true;
@@ -98,7 +101,10 @@ var capacitorChromecast = (function (exports, core) {
             context.addEventListener(window.cast.framework.CastContextEventType.CAST_STATE_CHANGED, (event) => {
                 const castEvent = event;
                 const available = castEvent.castState !== CastState.NO_DEVICES_AVAILABLE;
-                this.notifyListeners('RECEIVER_LISTENER', { available });
+                this.notifyListeners('RECEIVER_LISTENER', {
+                    available,
+                    isAvailable: available,
+                });
             });
             // Listen for session state changes
             const { SessionState } = window.cast.framework;
@@ -131,7 +137,10 @@ var capacitorChromecast = (function (exports, core) {
             // Emit initial receiver availability
             const initialState = context.getCastState();
             const available = initialState !== CastState.NO_DEVICES_AVAILABLE;
-            this.notifyListeners('RECEIVER_LISTENER', { available });
+            this.notifyListeners('RECEIVER_LISTENER', {
+                available,
+                isAvailable: available,
+            });
             // Initialize RemotePlayer and RemotePlayerController for media control
             this.remotePlayer = new window.cast.framework.RemotePlayer();
             this.remotePlayerController = new window.cast.framework.RemotePlayerController(this.remotePlayer);

@@ -35,6 +35,15 @@ Build and validate the web and native projects.
 
 This is useful to run in CI to verify that the plugin builds for all platforms.
 
+#### `npm run test:contract`
+
+Validate the plugin API contract across:
+- `src/definitions.ts`
+- iOS native method exports (`ChromecastPlugin.swift` and `ChromecastPlugin.m`)
+- Android native method exports (`Chromecast.java`)
+
+This catches API drift (missing methods, extra methods, or wrong Capacitor method return types).
+
 #### `npm run lint` / `npm run fmt`
 
 Check formatting and code quality, autoformat/autofix if possible.

@@ -217,6 +217,30 @@ public class ChromecastSession {
     }
 
     /**
+     * Removes a message listener and unregisters callbacks when possible.
+     * @param namespace namespace
+     */
+    public void removeMessageListener(final String namespace) {
+        synchronized (pendingMessageNamespaces) {
+            pendingMessageNamespaces.remove(namespace);
+        }
+        if (session == null) {
+            return;
+        }
+        activity.runOnUiThread(
+            new Runnable() {
+                public void run() {
+                    try {
+                        session.removeMessageReceivedCallbacks(namespace);
+                    } catch (IOException e) {
+                        android.util.Log.e("Chromecast", "Failed to remove message listener for namespace: " + namespace, e);
+                    }
+                }
+            }
+        );
+    }
+
+    /**
      * Sends a message to a specified namespace.
      * @param namespace namespace
      * @param message the message to send
