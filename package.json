@@ -1,6 +1,6 @@
 {
   "name": "@strasberry/capacitor-chromecast",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "This is a plugin for Capacitor that enables Chromecast functionality for iOS and Android.",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",

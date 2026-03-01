@@ -10,6 +10,11 @@ npm install @strasberry/capacitor-chromecast
 npx cap sync
 ```
 
+## Usage Guide
+
+For a practical, end-to-end integration guide with real code examples, see [`GUIDE_UTILISATION.md`](./GUIDE_UTILISATION.md).
+For a short setup, see [`QUICKSTART_5_MINUTES.md`](./QUICKSTART_5_MINUTES.md).
+
 ## iOS Integration Options
 
 By default, Capacitor iOS projects integrate this plugin through CocoaPods (`npx cap sync`).

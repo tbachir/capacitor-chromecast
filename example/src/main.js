@@ -7,7 +7,6 @@ const platformEl = document.querySelector('#platform');
 const resultEl = document.querySelector('#result');
 const logsEl = document.querySelector('#logs');
 
-const appIdInput = document.querySelector('#appId');
 const routeSelect = document.querySelector('#routeSelect');
 const mediaUrlInput = document.querySelector('#mediaUrl');
 const contentTypeInput = document.querySelector('#contentType');
@@ -17,7 +16,6 @@ const messageInput = document.querySelector('#messageInput');
 const mimeitSequenceBtn = document.querySelector('#mimeitSequenceBtn');
 
 const MIMEIT_DEMO = Object.freeze({
-  appId: 'FB38EA42',
   receiverUrl: 'https://cast.mimeit.com',
   namespace: 'urn:x-cast:com.mimeit.state',
 });
@@ -103,7 +101,7 @@ const EVENT_NAMES = [
   'SETUP',
 ];
 let listenersRegistered = false;
-let initializedAppId = null;
+let isInitialized = false;
 let mimeItSequenceRunning = false;
 
 const platform = Capacitor.getPlatform();
@@ -187,11 +185,9 @@ function buildMimeItSyncStateMessage(scene) {
 }
 
 function applyMimeItPreset() {
-  appIdInput.value = MIMEIT_DEMO.appId;
   namespaceInput.value = MIMEIT_DEMO.namespace;
   setMessageJson(buildMimeItSyncStateMessage('IDLE'));
   return {
-    appId: MIMEIT_DEMO.appId,
     namespace: MIMEIT_DEMO.namespace,
     receiverUrl: MIMEIT_DEMO.receiverUrl,
   };
@@ -306,32 +302,23 @@ async function setupEventListeners() {
 document.querySelector('#initializeBtn').addEventListener('click', () => {
   callPlugin('initialize', async () => {
     await setupEventListeners();
-    const appId = appIdInput.value.trim();
-    const effectiveAppId = appId || '(default receiver)';
 
-    if (platform === 'ios' && initializedAppId) {
-      if (initializedAppId !== effectiveAppId) {
-        return {
-          initialized: true,
-          appId: initializedAppId,
-          note: `iOS keeps the first initialized appId for this app launch. Restart the app to switch to '${effectiveAppId}'.`,
-        };
-      }
-
+    if (platform === 'ios' && isInitialized) {
       return {
         initialized: true,
-        appId: initializedAppId,
         note: 'Already initialized on iOS for this app launch.',
       };
     }
 
     await Chromecast.initialize({
-      appId: appId || undefined,
       autoJoinPolicy: 'origin_scoped',
       defaultActionPolicy: 'create_session',
     });
-    initializedAppId = effectiveAppId;
-    return { initialized: true, appId: effectiveAppId };
+    isInitialized = true;
+    return {
+      initialized: true,
+      note: 'App ID comes from capacitor.config.* (or plugin default if not configured).',
+    };
   });
 });
 

@@ -13,7 +13,7 @@ Pod::Spec.new do |s|
   s.source_files = 'ios/Plugin/**/*.{swift,h,m,c,cc,mm,cpp}'
   s.ios.deployment_target  = '15.0'
   s.dependency 'Capacitor'
-  s.dependency 'google-cast-sdk', '~> 4.8'
+  s.dependency 'google-cast-sdk', '~> 4.8.4'
   s.static_framework = true
   s.swift_version = '5.1'
 end

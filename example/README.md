@@ -49,8 +49,8 @@ npm run cap:open:ios
 
 - On web, route scanning is limited by the Google Cast Web SDK.
 - `requestSession()` opens the cast device picker.
-- Use a valid Cast `appId` for custom receivers, or leave empty for default receiver.
-- On iOS, `appId` is fixed after the first `initialize()` of the current app launch. Restart the app to switch to another receiver `appId`.
+- This example configures `plugins.Chromecast.appId` in `capacitor.config.json` (`FB38EA42`).
+- On iOS, `appId` is fixed after the first `initialize()` of the current app launch. Restart the app after changing config.
 - This specific example uses CocoaPods for iOS. For SPM iOS integration, use [`../example-spm`](../example-spm).
 - The example iOS app includes `NSLocalNetworkUsageDescription` and `NSBonjourServices` (`_googlecast._tcp`, `_FB38EA42._googlecast._tcp`) in `Info.plist` for Cast discovery.
 - If you use a custom receiver app ID, replace `FB38EA42` in `Info.plist` with your own app ID.
@@ -59,7 +59,6 @@ npm run cap:open:ios
 
 The example UI includes a ready-to-use MimeIt demo section with:
 
-- App ID preset: `FB38EA42`
 - Namespace preset: `urn:x-cast:com.mimeit.state`
 - Demo message buttons for `RESET`, `HEARTBEAT`, and `SYNC_STATE` scenes (`IDLE`, `NEXT_PLAYER`, `TURN_RUNNING`, `GAME_RESULTS`)
 - One-click sequence button: `Run MimeIt Demo Sequence`

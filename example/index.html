@@ -18,12 +18,10 @@
 
       <section class="card">
         <h2>Setup</h2>
-        <label for="appId">Receiver App ID (optional)</label>
-        <input
-          id="appId"
-          placeholder="FB38EA42 (MimeIt) or leave empty for default receiver"
-          value=""
-        />
+        <p>
+          Receiver App ID is configured in <code>capacitor.config.*</code>
+          (<code>plugins.Chromecast.appId</code>).
+        </p>
         <div class="row">
           <button id="initializeBtn">Initialize</button>
           <button id="networkBtn">Network Diagnostic</button>
