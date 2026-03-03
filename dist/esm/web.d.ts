@@ -176,6 +176,7 @@ declare global {
     }
 }
 export declare class ChromecastWeb extends WebPlugin implements Omit<ChromecastPlugin, 'addListener'> {
+    private static readonly DEFAULT_RECEIVER_APP_ID;
     private context;
     private messageListeners;
     private appId;
@@ -184,6 +185,7 @@ export declare class ChromecastWeb extends WebPlugin implements Omit<ChromecastP
     private remotePlayerController;
     initialize(options?: InitializeOptions): Promise<void>;
     private applyCastOptions;
+    private resolveAppId;
     private setupCastContext;
     private setupMessageListenersForSession;
     requestSession(): Promise<SessionObject>;

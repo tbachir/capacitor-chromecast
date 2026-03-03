@@ -221,6 +221,8 @@ declare global {
 export class ChromecastWeb
   extends WebPlugin
   implements Omit<ChromecastPlugin, 'addListener'> {
+  private static readonly DEFAULT_RECEIVER_APP_ID = 'CC1AD845';
+
   private context: CastContext | null = null;
   private messageListeners: Map<
     string,
@@ -291,7 +293,7 @@ export class ChromecastWeb
     context: CastContext,
     options?: InitializeOptions,
   ): void {
-    this.appId = options?.appId || '';
+    this.appId = this.resolveAppId(options);
 
     const autoJoinPolicyMap: Record<string, string> = {
       tab_and_origin_scoped:
@@ -306,6 +308,33 @@ export class ChromecastWeb
         autoJoinPolicyMap[options?.autoJoinPolicy || 'origin_scoped'] ||
         window.chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
     });
+  }
+
+  private resolveAppId(options?: InitializeOptions): string {
+    const callAppId = options?.appId?.trim();
+    if (callAppId) {
+      return callAppId;
+    }
+
+    const configuredAppId = (
+      globalThis as typeof globalThis & {
+        Capacitor?: {
+          config?: {
+            plugins?: {
+              Chromecast?: {
+                appId?: string;
+              };
+            };
+          };
+        };
+      }
+    ).Capacitor?.config?.plugins?.Chromecast?.appId?.trim();
+
+    if (configuredAppId) {
+      return configuredAppId;
+    }
+
+    return ChromecastWeb.DEFAULT_RECEIVER_APP_ID;
   }
 
   private setupCastContext(options?: InitializeOptions): void {

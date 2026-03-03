@@ -75,7 +75,7 @@ var capacitorChromecast = (function (exports, core) {
             });
         }
         applyCastOptions(context, options) {
-            this.appId = (options === null || options === void 0 ? void 0 : options.appId) || '';
+            this.appId = this.resolveAppId(options);
             const autoJoinPolicyMap = {
                 tab_and_origin_scoped: window.chrome.cast.AutoJoinPolicy.TAB_AND_ORIGIN_SCOPED,
                 origin_scoped: window.chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
@@ -86,6 +86,18 @@ var capacitorChromecast = (function (exports, core) {
                 autoJoinPolicy: autoJoinPolicyMap[(options === null || options === void 0 ? void 0 : options.autoJoinPolicy) || 'origin_scoped'] ||
                     window.chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
             });
+        }
+        resolveAppId(options) {
+            var _a, _b, _c, _d, _e, _f;
+            const callAppId = (_a = options === null || options === void 0 ? void 0 : options.appId) === null || _a === void 0 ? void 0 : _a.trim();
+            if (callAppId) {
+                return callAppId;
+            }
+            const configuredAppId = (_f = (_e = (_d = (_c = (_b = globalThis.Capacitor) === null || _b === void 0 ? void 0 : _b.config) === null || _c === void 0 ? void 0 : _c.plugins) === null || _d === void 0 ? void 0 : _d.Chromecast) === null || _e === void 0 ? void 0 : _e.appId) === null || _f === void 0 ? void 0 : _f.trim();
+            if (configuredAppId) {
+                return configuredAppId;
+            }
+            return ChromecastWeb.DEFAULT_RECEIVER_APP_ID;
         }
         setupCastContext(options) {
             const context = window.cast.framework.CastContext.getInstance();
@@ -480,6 +492,7 @@ var capacitorChromecast = (function (exports, core) {
             return result;
         }
     }
+    ChromecastWeb.DEFAULT_RECEIVER_APP_ID = 'CC1AD845';
 
     var web = /*#__PURE__*/Object.freeze({
         __proto__: null,
