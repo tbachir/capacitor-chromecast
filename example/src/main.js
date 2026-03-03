@@ -317,7 +317,8 @@ document.querySelector('#initializeBtn').addEventListener('click', () => {
     isInitialized = true;
     return {
       initialized: true,
-      note: 'App ID comes from capacitor.config.* (or plugin default if not configured).',
+      note:
+        'App ID comes from capacitor.config.* (or plugin default if not configured).',
     };
   });
 });
@@ -388,7 +389,8 @@ document.querySelector('#loadMediaBtn').addEventListener('click', () => {
         subtitle: 'Capacitor Chromecast Example',
         images: [
           {
-            url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg',
+            url:
+              'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg',
           },
         ],
       },
@@ -480,10 +482,12 @@ document.querySelector('#mimeitPresetBtn').addEventListener('click', () => {
   pushLog('mimeit:preset', preset);
 });
 
-document.querySelector('#mimeitOpenReceiverBtn').addEventListener('click', () => {
-  window.open(MIMEIT_DEMO.receiverUrl, '_blank', 'noopener,noreferrer');
-  pushLog('mimeit:receiver', { url: MIMEIT_DEMO.receiverUrl });
-});
+document
+  .querySelector('#mimeitOpenReceiverBtn')
+  .addEventListener('click', () => {
+    window.open(MIMEIT_DEMO.receiverUrl, '_blank', 'noopener,noreferrer');
+    pushLog('mimeit:receiver', { url: MIMEIT_DEMO.receiverUrl });
+  });
 
 document.querySelector('#mimeitResetBtn').addEventListener('click', () => {
   sendMimeItMessage('mimeitReset', { type: 'RESET', version: '1' });
@@ -507,12 +511,14 @@ document.querySelector('#mimeitNextPlayerBtn').addEventListener('click', () => {
   );
 });
 
-document.querySelector('#mimeitTurnRunningBtn').addEventListener('click', () => {
-  sendMimeItMessage(
-    'mimeitTurnRunning',
-    buildMimeItSyncStateMessage('TURN_RUNNING'),
-  );
-});
+document
+  .querySelector('#mimeitTurnRunningBtn')
+  .addEventListener('click', () => {
+    sendMimeItMessage(
+      'mimeitTurnRunning',
+      buildMimeItSyncStateMessage('TURN_RUNNING'),
+    );
+  });
 
 document.querySelector('#mimeitResultsBtn').addEventListener('click', () => {
   sendMimeItMessage(
@@ -532,7 +538,8 @@ document.querySelector('#clearLogsBtn').addEventListener('click', () => {
 
 setResult({
   ready: true,
-  tip: 'Press Initialize first, then Request Session. Use "Apply MimeIt Preset" for FB38EA42.',
+  tip:
+    'Press Initialize first, then Request Session. Use "Apply MimeIt Preset" for FB38EA42.',
 });
 pushLog('boot', { ready: true });
 setMimeItSequenceUi(false);

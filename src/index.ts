@@ -18,19 +18,17 @@ let autoInitializeInFlight: Promise<void> | null = null;
 let autoInitListenersRegistered = false;
 
 const isAutoInitializeEnabled = (): boolean => {
-  const configuredValue = (
-    globalThis as typeof globalThis & {
-      Capacitor?: {
-        config?: {
-          plugins?: {
-            Chromecast?: {
-              autoInitialize?: boolean;
-            };
+  const configuredValue = (globalThis as typeof globalThis & {
+    Capacitor?: {
+      config?: {
+        plugins?: {
+          Chromecast?: {
+            autoInitialize?: boolean;
           };
         };
       };
-    }
-  ).Capacitor?.config?.plugins?.Chromecast?.autoInitialize;
+    };
+  }).Capacitor?.config?.plugins?.Chromecast?.autoInitialize;
 
   return configuredValue !== false;
 };

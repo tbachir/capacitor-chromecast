@@ -236,8 +236,21 @@ var capacitorChromecast = (function (exports, core) {
             const userAgent = navigator.userAgent || '';
             const platform = navigator.platform || '';
             const maxTouchPoints = navigator.maxTouchPoints || 0;
-            return (/iPad|iPhone|iPod/i.test(userAgent) ||
-                (/Mac/i.test(platform) && maxTouchPoints > 1));
+            // Direct iOS user agent match — reliable for real iOS devices
+            if (/iPad|iPhone|iPod/i.test(userAgent)) {
+                return true;
+            }
+            // iPad on iOS 13+ reports "MacIntel" as platform and has touch points,
+            // but does NOT have window.chrome and its user agent contains "Safari"
+            // without "Chrome" (real Apple WebKit signature).
+            // Exclude Chrome-based environments (desktop Chrome, Electron, Chrome DevTools
+            // emulation) to avoid false positives during ionic serve development.
+            const isChrome = !!window.chrome;
+            const isAppleWebKit = /Safari/i.test(userAgent) && !/Chrome|Chromium|CriOS/i.test(userAgent);
+            if (/Mac/i.test(platform) && maxTouchPoints > 1 && !isChrome && isAppleWebKit) {
+                return true;
+            }
+            return false;
         }
         applyCastOptions(context, options) {
             this.appId = this.resolveAppId(options);

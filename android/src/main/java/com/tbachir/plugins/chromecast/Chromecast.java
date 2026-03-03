@@ -71,167 +71,164 @@ public class Chromecast extends Plugin {
                     new ChromecastConnection(
                         getActivity(),
                         new ChromecastConnection.Listener() {
-                        @Override
-                        public void onSessionStarted(Session session, String sessionId) {
-                            try {
-                                // Cast to CastSession to get full session info
-                                if (session instanceof CastSession) {
-                                    CastSession castSession = (CastSession) session;
-                                    // Update the media session reference
-                                    if (media != null) {
-                                        media.setSession(castSession);
+                            @Override
+                            public void onSessionStarted(Session session, String sessionId) {
+                                try {
+                                    // Cast to CastSession to get full session info
+                                    if (session instanceof CastSession) {
+                                        CastSession castSession = (CastSession) session;
+                                        // Update the media session reference
+                                        if (media != null) {
+                                            media.setSession(castSession);
+                                        }
+                                        // Create a full session object like iOS does
+                                        JSONObject sessionObject = ChromecastUtilities.createSessionObject(castSession, "connected");
+                                        // Fire both SESSION_STARTED and SESSION_UPDATE for compatibility with iOS
+                                        sendEvent("SESSION_STARTED", JSObject.fromJSONObject(sessionObject));
+                                        sendEvent("SESSION_UPDATE", JSObject.fromJSONObject(sessionObject));
+                                        Log.d(TAG, "Session started and connected: " + sessionId);
+                                    } else {
+                                        // Fallback to basic info
+                                        JSONObject result = new JSONObject();
+                                        result.put("isConnected", session.isConnected());
+                                        result.put("sessionId", sessionId);
+                                        sendEvent("SESSION_STARTED", JSObject.fromJSONObject(result));
                                     }
-                                    // Create a full session object like iOS does
-                                    JSONObject sessionObject = ChromecastUtilities.createSessionObject(castSession, "connected");
-                                    // Fire both SESSION_STARTED and SESSION_UPDATE for compatibility with iOS
-                                    sendEvent("SESSION_STARTED", JSObject.fromJSONObject(sessionObject));
-                                    sendEvent("SESSION_UPDATE", JSObject.fromJSONObject(sessionObject));
-                                    Log.d(TAG, "Session started and connected: " + sessionId);
-                                } else {
-                                    // Fallback to basic info
-                                    JSONObject result = new JSONObject();
-                                    result.put("isConnected", session.isConnected());
-                                    result.put("sessionId", sessionId);
-                                    sendEvent("SESSION_STARTED", JSObject.fromJSONObject(result));
+                                } catch (JSONException e) {
+                                    Log.e(TAG, "Error creating SESSION_STARTED event", e);
                                 }
-                            } catch (JSONException e) {
-                                Log.e(TAG, "Error creating SESSION_STARTED event", e);
                             }
-                        }
 
-                        @Override
-                        public void onSessionEnded(Session session, int error) {
-                            try {
-                                // Cast to CastSession to get full session info
-                                if (session instanceof CastSession) {
-                                    CastSession castSession = (CastSession) session;
-                                    String status = error != 0 ? "error" : "stopped";
-                                    JSONObject sessionObject = ChromecastUtilities.createSessionObject(castSession, status);
-                                    sendEvent("SESSION_ENDED", JSObject.fromJSONObject(sessionObject));
-                                    Log.d(TAG, "Session ended with status: " + status);
-                                } else {
-                                    // Fallback to basic info
+                            @Override
+                            public void onSessionEnded(Session session, int error) {
+                                try {
+                                    // Cast to CastSession to get full session info
+                                    if (session instanceof CastSession) {
+                                        CastSession castSession = (CastSession) session;
+                                        String status = error != 0 ? "error" : "stopped";
+                                        JSONObject sessionObject = ChromecastUtilities.createSessionObject(castSession, status);
+                                        sendEvent("SESSION_ENDED", JSObject.fromJSONObject(sessionObject));
+                                        Log.d(TAG, "Session ended with status: " + status);
+                                    } else {
+                                        // Fallback to basic info
+                                        JSONObject result = new JSONObject();
+                                        result.put("isConnected", session.isConnected());
+                                        result.put("error", error);
+                                        sendEvent("SESSION_ENDED", JSObject.fromJSONObject(result));
+                                    }
+                                } catch (JSONException e) {
+                                    Log.e(TAG, "Error creating SESSION_ENDED event", e);
+                                }
+                            }
+
+                            @Override
+                            public void onSessionEnding(Session session) {}
+
+                            @Override
+                            public void onSessionResumeFailed(Session session, int error) {}
+
+                            @Override
+                            public void onSessionResumed(Session session, boolean wasSuspended) {
+                                try {
+                                    // Cast to CastSession to get full session info
+                                    if (session instanceof CastSession) {
+                                        CastSession castSession = (CastSession) session;
+                                        // Update the media session reference
+                                        if (media != null) {
+                                            media.setSession(castSession);
+                                        }
+                                        // Create a full session object like iOS does
+                                        JSONObject sessionObject = ChromecastUtilities.createSessionObject(castSession, "connected");
+                                        // Fire SESSION_RESUMED and SESSION_LISTENER/SESSION_UPDATE for compatibility
+                                        sendEvent("SESSION_RESUMED", JSObject.fromJSONObject(sessionObject));
+                                        sendEvent("SESSION_LISTENER", JSObject.fromJSONObject(sessionObject));
+                                        Log.d(TAG, "Session resumed: " + castSession.getSessionId());
+                                    } else {
+                                        // Fallback to basic info
+                                        JSONObject result = new JSONObject();
+                                        result.put("isConnected", session.isConnected());
+                                        result.put("wasSuspended", wasSuspended);
+                                        sendEvent("SESSION_RESUMED", JSObject.fromJSONObject(result));
+                                    }
+                                } catch (JSONException e) {
+                                    Log.e(TAG, "Error creating SESSION_RESUMED event", e);
+                                }
+                            }
+
+                            @Override
+                            public void onSessionResuming(Session session, String sessionId) {}
+
+                            @Override
+                            public void onSessionStartFailed(Session session, int error) {
+                                try {
                                     JSONObject result = new JSONObject();
                                     result.put("isConnected", session.isConnected());
                                     result.put("error", error);
-                                    sendEvent("SESSION_ENDED", JSObject.fromJSONObject(result));
+                                    sendEvent("SESSION_START_FAILED", JSObject.fromJSONObject(result));
+                                } catch (JSONException e) {
+                                    Log.e(TAG, "Error creating SESSION_START_FAILED event", e);
                                 }
-                            } catch (JSONException e) {
-                                Log.e(TAG, "Error creating SESSION_ENDED event", e);
                             }
-                        }
 
-                        @Override
-                        public void onSessionEnding(Session session) {}
+                            @Override
+                            public void onSessionStarting(Session session) {}
 
-                        @Override
-                        public void onSessionResumeFailed(Session session, int error) {}
+                            @Override
+                            public void onSessionSuspended(Session session, int reason) {}
 
-                        @Override
-                        public void onSessionResumed(Session session, boolean wasSuspended) {
-                            try {
-                                // Cast to CastSession to get full session info
-                                if (session instanceof CastSession) {
-                                    CastSession castSession = (CastSession) session;
-                                    // Update the media session reference
-                                    if (media != null) {
-                                        media.setSession(castSession);
+                            @Override
+                            public void onSessionRejoin(JSONObject jsonSession) {
+                                try {
+                                    sendEvent("SESSION_LISTENER", JSObject.fromJSONObject(jsonSession));
+                                } catch (JSONException e) {
+                                    Log.e(TAG, "Error creating SESSION_LISTENER event", e);
+                                }
+                            }
+
+                            @Override
+                            public void onSessionUpdate(JSONObject jsonSession) {
+                                try {
+                                    sendEvent("SESSION_UPDATE", JSObject.fromJSONObject(jsonSession));
+                                } catch (JSONException e) {
+                                    Log.e(TAG, "Error creating SESSION_UPDATE event", e);
+                                }
+                            }
+
+                            @Override
+                            public void onSessionEnd(JSONObject jsonSession) {
+                                onSessionUpdate(jsonSession);
+                            }
+
+                            @Override
+                            public void onReceiverAvailableUpdate(boolean available) {
+                                sendEvent("RECEIVER_LISTENER", new JSObject().put("available", available).put("isAvailable", available));
+                            }
+
+                            @Override
+                            public void onMediaLoaded(JSONObject jsonMedia) {
+                                try {
+                                    sendEvent("MEDIA_LOAD", JSObject.fromJSONObject(jsonMedia));
+                                } catch (JSONException e) {
+                                    Log.e(TAG, "Error creating MEDIA_LOAD event", e);
+                                }
+                            }
+
+                            @Override
+                            public void onMediaUpdate(JSONObject jsonMedia) {
+                                try {
+                                    if (jsonMedia != null) {
+                                        sendEvent("MEDIA_UPDATE", JSObject.fromJSONObject(jsonMedia));
                                     }
-                                    // Create a full session object like iOS does
-                                    JSONObject sessionObject = ChromecastUtilities.createSessionObject(castSession, "connected");
-                                    // Fire SESSION_RESUMED and SESSION_LISTENER/SESSION_UPDATE for compatibility
-                                    sendEvent("SESSION_RESUMED", JSObject.fromJSONObject(sessionObject));
-                                    sendEvent("SESSION_LISTENER", JSObject.fromJSONObject(sessionObject));
-                                    Log.d(TAG, "Session resumed: " + castSession.getSessionId());
-                                } else {
-                                    // Fallback to basic info
-                                    JSONObject result = new JSONObject();
-                                    result.put("isConnected", session.isConnected());
-                                    result.put("wasSuspended", wasSuspended);
-                                    sendEvent("SESSION_RESUMED", JSObject.fromJSONObject(result));
+                                } catch (JSONException e) {
+                                    Log.e(TAG, "Error creating MEDIA_UPDATE event", e);
                                 }
-                            } catch (JSONException e) {
-                                Log.e(TAG, "Error creating SESSION_RESUMED event", e);
                             }
-                        }
 
-                        @Override
-                        public void onSessionResuming(Session session, String sessionId) {}
-
-                        @Override
-                        public void onSessionStartFailed(Session session, int error) {
-                            try {
-                                JSONObject result = new JSONObject();
-                                result.put("isConnected", session.isConnected());
-                                result.put("error", error);
-                                sendEvent("SESSION_START_FAILED", JSObject.fromJSONObject(result));
-                            } catch (JSONException e) {
-                                Log.e(TAG, "Error creating SESSION_START_FAILED event", e);
+                            @Override
+                            public void onMessageReceived(CastDevice device, String namespace, String message) {
+                                Log.d(TAG, "onMessageReceived - namespace: " + namespace + ", message: " + message);
+                                sendEvent("RECEIVER_MESSAGE", new JSObject().put("namespace", namespace).put("message", message));
                             }
-                        }
-
-                        @Override
-                        public void onSessionStarting(Session session) {}
-
-                        @Override
-                        public void onSessionSuspended(Session session, int reason) {}
-
-                        @Override
-                        public void onSessionRejoin(JSONObject jsonSession) {
-                            try {
-                                sendEvent("SESSION_LISTENER", JSObject.fromJSONObject(jsonSession));
-                            } catch (JSONException e) {
-                                Log.e(TAG, "Error creating SESSION_LISTENER event", e);
-                            }
-                        }
-
-                        @Override
-                        public void onSessionUpdate(JSONObject jsonSession) {
-                            try {
-                                sendEvent("SESSION_UPDATE", JSObject.fromJSONObject(jsonSession));
-                            } catch (JSONException e) {
-                                Log.e(TAG, "Error creating SESSION_UPDATE event", e);
-                            }
-                        }
-
-                        @Override
-                        public void onSessionEnd(JSONObject jsonSession) {
-                            onSessionUpdate(jsonSession);
-                        }
-
-                        @Override
-                        public void onReceiverAvailableUpdate(boolean available) {
-                            sendEvent(
-                                "RECEIVER_LISTENER",
-                                new JSObject().put("available", available).put("isAvailable", available)
-                            );
-                        }
-
-                        @Override
-                        public void onMediaLoaded(JSONObject jsonMedia) {
-                            try {
-                                sendEvent("MEDIA_LOAD", JSObject.fromJSONObject(jsonMedia));
-                            } catch (JSONException e) {
-                                Log.e(TAG, "Error creating MEDIA_LOAD event", e);
-                            }
-                        }
-
-                        @Override
-                        public void onMediaUpdate(JSONObject jsonMedia) {
-                            try {
-                                if (jsonMedia != null) {
-                                    sendEvent("MEDIA_UPDATE", JSObject.fromJSONObject(jsonMedia));
-                                }
-                            } catch (JSONException e) {
-                                Log.e(TAG, "Error creating MEDIA_UPDATE event", e);
-                            }
-                        }
-
-                        @Override
-                        public void onMessageReceived(CastDevice device, String namespace, String message) {
-                            Log.d(TAG, "onMessageReceived - namespace: " + namespace + ", message: " + message);
-                            sendEvent("RECEIVER_MESSAGE", new JSObject().put("namespace", namespace).put("message", message));
-                        }
                         }
                     );
             }

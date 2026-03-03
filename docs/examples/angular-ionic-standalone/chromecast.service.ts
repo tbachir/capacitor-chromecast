@@ -1,4 +1,10 @@
-import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import {
+  DestroyRef,
+  Injectable,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import type { PluginListenerHandle } from '@capacitor/core';
 import { Chromecast } from '@strasberry/capacitor-chromecast';
@@ -75,11 +81,14 @@ export class ChromecastService {
   async scanRoutes(timeout = 8): Promise<RouteInfo[]> {
     await this.ensureInitialized();
     this.patchState({ scanning: true });
-    return this.runWithErrorHandling(async () => {
-      const { routes } = await Chromecast.startRouteScan({ timeout });
-      this.patchState({ routes, scanning: false, lastError: null });
-      return routes;
-    }, () => this.patchState({ scanning: false }));
+    return this.runWithErrorHandling(
+      async () => {
+        const { routes } = await Chromecast.startRouteScan({ timeout });
+        this.patchState({ routes, scanning: false, lastError: null });
+        return routes;
+      },
+      () => this.patchState({ scanning: false }),
+    );
   }
 
   async stopRouteScan(): Promise<void> {
@@ -167,7 +176,10 @@ export class ChromecastService {
     return this.runWithErrorHandling(() => Chromecast.networkDiagnostic());
   }
 
-  async sendReceiverMessage(namespace: string, payload: unknown): Promise<void> {
+  async sendReceiverMessage(
+    namespace: string,
+    payload: unknown,
+  ): Promise<void> {
     await this.ensureInitialized();
     return this.runWithErrorHandling(async () => {
       if (!this.registeredNamespaces.has(namespace)) {

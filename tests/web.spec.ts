@@ -16,7 +16,7 @@ const setupCastFramework = () => {
     addEventListener: vi.fn(),
   };
 
-  (window as unknown as { cast: unknown }).cast = {
+  ((window as unknown) as { cast: unknown }).cast = {
     framework: {
       CastContext: {
         getInstance: () => context,
@@ -50,7 +50,7 @@ const setupCastFramework = () => {
     },
   };
 
-  (window as unknown as { chrome: unknown }).chrome = {
+  ((window as unknown) as { chrome: unknown }).chrome = {
     cast: {
       AutoJoinPolicy: {
         TAB_AND_ORIGIN_SCOPED: 'tab_and_origin_scoped',
@@ -72,10 +72,10 @@ describe('ChromecastWeb initialize', () => {
       configurable: true,
     });
 
-    delete (window as unknown as { __onGCastApiAvailable?: unknown })
+    delete ((window as unknown) as { __onGCastApiAvailable?: unknown })
       .__onGCastApiAvailable;
-    delete (window as unknown as { cast?: unknown }).cast;
-    delete (window as unknown as { chrome?: unknown }).chrome;
+    delete ((window as unknown) as { cast?: unknown }).cast;
+    delete ((window as unknown) as { chrome?: unknown }).chrome;
 
     document.head.innerHTML = '';
     document.body.innerHTML = '';
@@ -171,6 +171,64 @@ describe('ChromecastWeb initialize', () => {
     expect(
       document.querySelector(`script[src="${CAST_SENDER_SCRIPT_SRC}"]`),
     ).toBeNull();
+  });
+
+  it('rejects iPad on iOS 13+ identified by MacIntel platform and touch points', async () => {
+    vi.spyOn(window.navigator, 'userAgent', 'get').mockReturnValue(
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
+    );
+    vi.spyOn(window.navigator, 'platform', 'get').mockReturnValue('MacIntel');
+    Object.defineProperty(window.navigator, 'maxTouchPoints', {
+      value: 5,
+      configurable: true,
+    });
+    // window.chrome is deleted in beforeEach — real iPad does not have it
+
+    const plugin = new ChromecastWeb();
+
+    await expect(plugin.initialize()).rejects.toThrow(
+      'not supported on iOS browsers',
+    );
+  });
+
+  it('allows Chrome desktop with DevTools iOS emulation active', async () => {
+    vi.spyOn(window.navigator, 'userAgent', 'get').mockReturnValue(
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    );
+    vi.spyOn(window.navigator, 'platform', 'get').mockReturnValue('MacIntel');
+    Object.defineProperty(window.navigator, 'maxTouchPoints', {
+      value: 5,
+      configurable: true,
+    });
+    ((window as unknown) as { chrome: object }).chrome = {};
+
+    const plugin = new ChromecastWeb();
+    const initPromise = plugin.initialize();
+
+    // Trigger Cast API unavailable to resolve the promise — the important
+    // thing is that the iOS guard did not throw synchronously before this point
+    window.__onGCastApiAvailable?.(false);
+
+    await expect(initPromise).rejects.toThrow('Cast API not available');
+  });
+
+  it('allows desktop Mac without touch points', async () => {
+    vi.spyOn(window.navigator, 'userAgent', 'get').mockReturnValue(
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    );
+    vi.spyOn(window.navigator, 'platform', 'get').mockReturnValue('MacIntel');
+    Object.defineProperty(window.navigator, 'maxTouchPoints', {
+      value: 0,
+      configurable: true,
+    });
+    ((window as unknown) as { chrome: object }).chrome = {};
+
+    const plugin = new ChromecastWeb();
+    const initPromise = plugin.initialize();
+
+    window.__onGCastApiAvailable?.(false);
+
+    await expect(initPromise).rejects.toThrow('Cast API not available');
   });
 
   it('reports a native fallback misconfiguration on non-web platforms', async () => {
