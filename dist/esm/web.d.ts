@@ -2,7 +2,7 @@ import { WebPlugin } from '@capacitor/core';
 import type { ChromecastPlugin, InitializeOptions, LoadMediaOptions, LoadMediaWithHeadersOptions, MediaObject, NetworkDiagnosticResult, RouteInfo, SendMessageResult, SessionObject } from './definitions';
 declare global {
     interface Window {
-        __onGCastApiAvailable: (isAvailable: boolean) => void;
+        __onGCastApiAvailable?: (isAvailable: boolean) => void;
         cast: {
             framework: {
                 CastContext: {
@@ -177,13 +177,22 @@ declare global {
 }
 export declare class ChromecastWeb extends WebPlugin implements Omit<ChromecastPlugin, 'addListener'> {
     private static readonly DEFAULT_RECEIVER_APP_ID;
+    private static readonly CAST_SENDER_SCRIPT_SRC;
+    private static readonly CAST_SDK_LOAD_TIMEOUT_MS;
+    private static readonly CAST_FRAMEWORK_READY_TIMEOUT_MS;
     private context;
     private messageListeners;
     private appId;
     private contextSetup;
     private remotePlayer;
     private remotePlayerController;
+    private castSdkLoadPromise;
     initialize(options?: InitializeOptions): Promise<void>;
+    private loadCastSenderSdk;
+    private createCastSenderScript;
+    private assertSupportedWebSenderEnvironment;
+    private isSecureContextForCast;
+    private isUnsupportedIosWebSenderEnvironment;
     private applyCastOptions;
     private resolveAppId;
     private setupCastContext;

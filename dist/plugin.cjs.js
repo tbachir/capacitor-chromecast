@@ -6,7 +6,7 @@ var core = require('@capacitor/core');
 
 // Singleton promise to prevent race conditions in Capacitor's loadPluginImplementation
 let webInstancePromise = null;
-const Chromecast = core.registerPlugin('Chromecast', {
+const ChromecastBase = core.registerPlugin('Chromecast', {
     web: () => {
         if (!webInstancePromise) {
             webInstancePromise = Promise.resolve().then(function () { return web; }).then(m => new m.ChromecastWeb());
@@ -14,6 +14,88 @@ const Chromecast = core.registerPlugin('Chromecast', {
         return webInstancePromise;
     },
 });
+let autoInitializeInFlight = null;
+let autoInitListenersRegistered = false;
+const isAutoInitializeEnabled = () => {
+    var _a, _b, _c, _d;
+    const configuredValue = (_d = (_c = (_b = (_a = globalThis.Capacitor) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.plugins) === null || _c === void 0 ? void 0 : _c.Chromecast) === null || _d === void 0 ? void 0 : _d.autoInitialize;
+    return configuredValue !== false;
+};
+const autoInitializeEnabled = isAutoInitializeEnabled();
+const initializeBase = (options) => ChromecastBase.initialize(options);
+const initializeAndTrack = (options) => {
+    autoInitializeInFlight = initializeBase(options).catch(error => {
+        autoInitializeInFlight = null;
+        throw error;
+    });
+    return autoInitializeInFlight;
+};
+const autoInitialize = (force = false) => {
+    if (force) {
+        autoInitializeInFlight = null;
+    }
+    if (!autoInitializeInFlight) {
+        autoInitializeInFlight = initializeAndTrack();
+    }
+    return autoInitializeInFlight;
+};
+const setupAutoInitialize = () => {
+    if (!autoInitializeEnabled ||
+        autoInitListenersRegistered ||
+        typeof document === 'undefined') {
+        return;
+    }
+    autoInitListenersRegistered = true;
+    const triggerAutoInitialize = (force = false) => {
+        void autoInitialize(force).catch(error => {
+            // Keep app flow alive even if Cast SDK isn't available on the current device/browser.
+            console.warn('[Chromecast] auto-initialize failed:', error);
+        });
+    };
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => triggerAutoInitialize(), { once: true });
+    }
+    else {
+        triggerAutoInitialize();
+    }
+    // Native Capacitor apps emit "resume" on document when returning from background.
+    document.addEventListener('resume', () => triggerAutoInitialize(true));
+    // Browser fallback for web platform where "resume" event is not available.
+    if (core.Capacitor.getPlatform() === 'web') {
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                triggerAutoInitialize(true);
+            }
+        });
+    }
+};
+const methodsWithoutAutoInit = new Set([
+    'initialize',
+    'addListener',
+    'removeAllListeners',
+]);
+const Chromecast = new Proxy(ChromecastBase, {
+    get(target, prop, receiver) {
+        const original = Reflect.get(target, prop, receiver);
+        if (typeof original !== 'function') {
+            return original;
+        }
+        if (prop === 'initialize') {
+            return (options) => initializeAndTrack(options);
+        }
+        if (methodsWithoutAutoInit.has(prop)) {
+            return original.bind(target);
+        }
+        return async (...args) => {
+            if (!autoInitializeEnabled) {
+                return original.apply(target, args);
+            }
+            await autoInitialize();
+            return original.apply(target, args);
+        };
+    },
+});
+setupAutoInitialize();
 
 class ChromecastWeb extends core.WebPlugin {
     constructor() {
@@ -24,58 +106,141 @@ class ChromecastWeb extends core.WebPlugin {
         this.contextSetup = false;
         this.remotePlayer = null;
         this.remotePlayerController = null;
+        this.castSdkLoadPromise = null;
     }
     async initialize(options) {
-        var _a;
+        var _a, _b;
+        this.assertSupportedWebSenderEnvironment();
         // Check if already loaded
-        if ((_a = window.cast) === null || _a === void 0 ? void 0 : _a.framework) {
+        if (((_a = window.cast) === null || _a === void 0 ? void 0 : _a.framework) && ((_b = window.chrome) === null || _b === void 0 ? void 0 : _b.cast)) {
             this.setupCastContext(options);
             return;
         }
-        const script = document.createElement('script');
-        script.setAttribute('type', 'text/javascript');
-        script.setAttribute('src', 'https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1');
-        document.body.appendChild(script);
+        if (!this.castSdkLoadPromise) {
+            this.castSdkLoadPromise = this.loadCastSenderSdk();
+        }
+        try {
+            await this.castSdkLoadPromise;
+        }
+        catch (error) {
+            this.castSdkLoadPromise = null;
+            throw error;
+        }
+        this.setupCastContext(options);
+    }
+    async loadCastSenderSdk() {
+        var _a, _b;
+        if (((_a = window.cast) === null || _a === void 0 ? void 0 : _a.framework) && ((_b = window.chrome) === null || _b === void 0 ? void 0 : _b.cast)) {
+            return;
+        }
         return new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-                reject(new Error('Cast SDK load timeout'));
-            }, 10000);
-            window.__onGCastApiAvailable = (isAvailable) => {
-                clearTimeout(timeout);
-                if (isAvailable) {
-                    let settled = false;
-                    // Wait for framework to be fully ready
-                    const checkInterval = setInterval(() => {
-                        var _a, _b;
-                        if (((_a = window.cast) === null || _a === void 0 ? void 0 : _a.framework) && ((_b = window.chrome) === null || _b === void 0 ? void 0 : _b.cast)) {
-                            clearInterval(checkInterval);
-                            if (!settled) {
-                                settled = true;
-                                this.setupCastContext(options);
-                                resolve();
-                            }
-                        }
-                    }, 100);
-                    setTimeout(() => {
-                        var _a, _b;
-                        clearInterval(checkInterval);
-                        if (!settled) {
-                            if (((_a = window.cast) === null || _a === void 0 ? void 0 : _a.framework) && ((_b = window.chrome) === null || _b === void 0 ? void 0 : _b.cast)) {
-                                settled = true;
-                                this.setupCastContext(options);
-                                resolve();
-                            }
-                            else {
-                                reject(new Error('Cast framework not available'));
-                            }
-                        }
-                    }, 5000);
+            var _a, _b;
+            let settled = false;
+            const previousCallback = window.__onGCastApiAvailable;
+            const settle = (error) => {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                window.clearTimeout(timeoutId);
+                if (window.__onGCastApiAvailable === onCastApiAvailable) {
+                    if (typeof previousCallback === 'function') {
+                        window.__onGCastApiAvailable = previousCallback;
+                    }
+                    else {
+                        delete window.__onGCastApiAvailable;
+                    }
+                }
+                script.removeEventListener('error', onScriptError);
+                if (error) {
+                    reject(error);
                 }
                 else {
-                    reject(new Error('Cast API not available'));
+                    resolve();
                 }
             };
+            const waitForFrameworkReady = () => {
+                const startedAt = Date.now();
+                const check = () => {
+                    var _a, _b;
+                    if (((_a = window.cast) === null || _a === void 0 ? void 0 : _a.framework) && ((_b = window.chrome) === null || _b === void 0 ? void 0 : _b.cast)) {
+                        settle();
+                        return;
+                    }
+                    if (Date.now() - startedAt >
+                        ChromecastWeb.CAST_FRAMEWORK_READY_TIMEOUT_MS) {
+                        settle(new Error('Cast framework not available'));
+                        return;
+                    }
+                    window.setTimeout(check, 100);
+                };
+                check();
+            };
+            const onCastApiAvailable = (isAvailable) => {
+                if (typeof previousCallback === 'function') {
+                    previousCallback(isAvailable);
+                }
+                if (!isAvailable) {
+                    settle(new Error('Cast API not available'));
+                    return;
+                }
+                waitForFrameworkReady();
+            };
+            const onScriptError = () => {
+                settle(new Error('Failed to load Cast SDK script'));
+            };
+            // Google Cast Web Sender requires this callback to be set before script load.
+            window.__onGCastApiAvailable = onCastApiAvailable;
+            const existingScript = document.querySelector(`script[src="${ChromecastWeb.CAST_SENDER_SCRIPT_SRC}"]`);
+            const script = existingScript !== null && existingScript !== void 0 ? existingScript : this.createCastSenderScript();
+            script.addEventListener('error', onScriptError, { once: true });
+            const timeoutId = window.setTimeout(() => {
+                settle(new Error('Cast SDK load timeout'));
+            }, ChromecastWeb.CAST_SDK_LOAD_TIMEOUT_MS);
+            if (!existingScript) {
+                const target = (_b = (_a = document.body) !== null && _a !== void 0 ? _a : document.head) !== null && _b !== void 0 ? _b : document.documentElement;
+                if (!target) {
+                    settle(new Error('Unable to inject Cast SDK script in document'));
+                    return;
+                }
+                target.appendChild(script);
+            }
         });
+    }
+    createCastSenderScript() {
+        const script = document.createElement('script');
+        script.setAttribute('type', 'text/javascript');
+        script.setAttribute('src', ChromecastWeb.CAST_SENDER_SCRIPT_SRC);
+        return script;
+    }
+    assertSupportedWebSenderEnvironment() {
+        const platform = core.Capacitor.getPlatform();
+        if (platform !== 'web') {
+            throw new Error(`Chromecast web fallback loaded on '${platform}'. Native plugin may be missing. Run "npx cap sync" and rebuild the app.`);
+        }
+        if (!this.isSecureContextForCast()) {
+            throw new Error('Google Cast Web Sender requires a secure context (HTTPS) or localhost.');
+        }
+        if (this.isUnsupportedIosWebSenderEnvironment()) {
+            throw new Error('Google Cast Web Sender is not supported on iOS browsers or WKWebView. Use the native Capacitor iOS plugin instead.');
+        }
+    }
+    isSecureContextForCast() {
+        if (window.isSecureContext) {
+            return true;
+        }
+        if (window.location.protocol !== 'http:') {
+            return false;
+        }
+        const host = window.location.hostname;
+        return host === 'localhost' || host === '127.0.0.1' || host === '::1';
+    }
+    isUnsupportedIosWebSenderEnvironment() {
+        const userAgent = navigator.userAgent || '';
+        const platform = navigator.platform || '';
+        const maxTouchPoints = navigator.maxTouchPoints || 0;
+        return (/iPad|iPhone|iPod/i.test(userAgent) ||
+            (/Mac/i.test(platform) && maxTouchPoints > 1));
     }
     applyCastOptions(context, options) {
         this.appId = this.resolveAppId(options);
@@ -496,6 +661,9 @@ class ChromecastWeb extends core.WebPlugin {
     }
 }
 ChromecastWeb.DEFAULT_RECEIVER_APP_ID = 'CC1AD845';
+ChromecastWeb.CAST_SENDER_SCRIPT_SRC = 'https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1';
+ChromecastWeb.CAST_SDK_LOAD_TIMEOUT_MS = 10000;
+ChromecastWeb.CAST_FRAMEWORK_READY_TIMEOUT_MS = 5000;
 
 var web = /*#__PURE__*/Object.freeze({
     __proto__: null,

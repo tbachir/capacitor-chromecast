@@ -27,6 +27,8 @@ const config: CapacitorConfig = {
       // Receiver ID de ton app Cast, ou supprime cette ligne
       // pour utiliser le receiver par defaut (CC1AD845)
       appId: 'FB38EA42',
+      // Optionnel (defaut: true) : auto initialize au chargement et au resume
+      autoInitialize: true,
     },
   },
 };
@@ -70,7 +72,8 @@ export class ChromecastService {
       this.listenersBound = true;
     }
 
-    // appId est pris depuis capacitor.config.*
+    // Si autoInitialize=true (defaut), cet appel n'est pas obligatoire.
+    // Garde-le seulement si tu veux forcer des options runtime.
     await Chromecast.initialize({
       autoJoinPolicy: 'origin_scoped',
       defaultActionPolicy: 'create_session',
@@ -226,7 +229,7 @@ async function sendStateToReceiver() {
 
 ## 6. Flux minimum recommande en production
 
-1. `initialize()` au lancement (apres bootstrap app).
+1. Laisser `autoInitialize: true` (defaut) pour init automatique au chargement et au `resume`.
 2. `requestSession()` sur action utilisateur (bouton Cast).
 3. `loadMedia()` ou `loadMediaWithHeaders()`.
 4. controles (`mediaPlay`, `mediaPause`, `mediaSeek`, etc.).
@@ -237,8 +240,18 @@ async function sendStateToReceiver() {
 
 - iOS: le SDK Cast garde le premier `appId` initialise pendant tout le cycle de vie de l'app. Pour changer d'`appId`, redemarre l'app.
 - Android/iOS natif: l'`appId` peut venir de `capacitor.config.*` (`plugins.Chromecast.appId`).
+- Avec `autoInitialize: true`, les appels plugin lancent automatiquement une init si necessaire.
+- Si tu veux forcer des options runtime via `initialize(...)` (ex: `autoJoinPolicy`, `defaultActionPolicy` ou `appId`), soit initialise tres tot au bootstrap, soit mets `autoInitialize: false` et gere l'init manuellement.
 - Web: certaines fonctions de scan/selection sont limitees par le SDK Cast web (picker navigateur).
 - Toujours entourer les appels plugin avec `try/catch` et journaliser les erreurs plugin.
+
+### Web prerequisites
+
+- Web Sender supporte: Chrome desktop et Chrome Android.
+- Web Sender non supporte sur iOS browser/WKWebView.
+- Utiliser HTTPS, ou `http://localhost` / `http://127.0.0.1` en local.
+- Appeler `requestSession()` uniquement suite a une action utilisateur (click/tap).
+- Si `cast_sender.js` se charge dans une app Capacitor iOS/Android, le plugin natif n'est probablement pas charge (verifier `npx cap sync` + rebuild natif).
 
 ## 8. Check de sante rapide
 
@@ -256,7 +269,7 @@ Tu peux verifier notamment:
 
 Si ton app est en Angular standalone, tu peux partir de ce service injectable:
 
-- `snippets/ionic-angular-standalone/chromecast.service.ts`
+- [`examples/angular-ionic-standalone/chromecast.service.ts`](./examples/angular-ionic-standalone/chromecast.service.ts)
 
 Points clefs:
 - `@Injectable({ providedIn: 'root' })` pour etre disponible partout.

@@ -106,5 +106,4 @@ Verifier en priorite:
 - `isWiFi: true`
 - `castConnectionAvailable: true`
 
-Pour plus de details, voir [GUIDE_UTILISATION.md](./GUIDE_UTILISATION.md).
-
+Pour plus de details, voir [GUIDE.md](./GUIDE.md).

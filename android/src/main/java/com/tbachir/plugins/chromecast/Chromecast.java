@@ -66,10 +66,11 @@ public class Chromecast extends Plugin {
         setup();
 
         try {
-            this.connection =
-                new ChromecastConnection(
-                    getActivity(),
-                    new ChromecastConnection.Listener() {
+            if (this.connection == null) {
+                this.connection =
+                    new ChromecastConnection(
+                        getActivity(),
+                        new ChromecastConnection.Listener() {
                         @Override
                         public void onSessionStarted(Session session, String sessionId) {
                             try {
@@ -231,13 +232,19 @@ public class Chromecast extends Plugin {
                             Log.d(TAG, "onMessageReceived - namespace: " + namespace + ", message: " + message);
                             sendEvent("RECEIVER_MESSAGE", new JSObject().put("namespace", namespace).put("message", message));
                         }
-                    }
-                );
+                        }
+                    );
+            }
             this.media = connection.getChromecastSession();
         } catch (RuntimeException e) {
             Log.e(TAG, "Error initializing Chromecast connection: " + e.getMessage());
             noChromecastError = "Could not initialize chromecast: " + e.getMessage();
             e.printStackTrace();
+        }
+
+        if (connection == null) {
+            pluginCall.reject(noChromecastError != null ? noChromecastError : "Could not initialize chromecast");
+            return;
         }
 
         connection.initialize(appId, pluginCall);
