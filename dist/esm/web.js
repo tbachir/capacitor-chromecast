@@ -27,24 +27,31 @@ export class ChromecastWeb extends WebPlugin {
             window.__onGCastApiAvailable = (isAvailable) => {
                 clearTimeout(timeout);
                 if (isAvailable) {
+                    let settled = false;
                     // Wait for framework to be fully ready
                     const checkInterval = setInterval(() => {
                         var _a, _b;
                         if (((_a = window.cast) === null || _a === void 0 ? void 0 : _a.framework) && ((_b = window.chrome) === null || _b === void 0 ? void 0 : _b.cast)) {
                             clearInterval(checkInterval);
-                            this.setupCastContext(options);
-                            resolve();
+                            if (!settled) {
+                                settled = true;
+                                this.setupCastContext(options);
+                                resolve();
+                            }
                         }
                     }, 100);
                     setTimeout(() => {
-                        var _a;
+                        var _a, _b;
                         clearInterval(checkInterval);
-                        if ((_a = window.cast) === null || _a === void 0 ? void 0 : _a.framework) {
-                            this.setupCastContext(options);
-                            resolve();
-                        }
-                        else {
-                            reject(new Error('Cast framework not available'));
+                        if (!settled) {
+                            if (((_a = window.cast) === null || _a === void 0 ? void 0 : _a.framework) && ((_b = window.chrome) === null || _b === void 0 ? void 0 : _b.cast)) {
+                                settled = true;
+                                this.setupCastContext(options);
+                                resolve();
+                            }
+                            else {
+                                reject(new Error('Cast framework not available'));
+                            }
                         }
                     }, 5000);
                 }
