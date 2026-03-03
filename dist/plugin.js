@@ -247,7 +247,10 @@ var capacitorChromecast = (function (exports, core) {
             // emulation) to avoid false positives during ionic serve development.
             const isChrome = !!window.chrome;
             const isAppleWebKit = /Safari/i.test(userAgent) && !/Chrome|Chromium|CriOS/i.test(userAgent);
-            if (/Mac/i.test(platform) && maxTouchPoints > 1 && !isChrome && isAppleWebKit) {
+            if (/Mac/i.test(platform) &&
+                maxTouchPoints > 1 &&
+                !isChrome &&
+                isAppleWebKit) {
                 return true;
             }
             return false;
