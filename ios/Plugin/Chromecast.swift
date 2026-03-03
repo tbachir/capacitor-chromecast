@@ -120,7 +120,10 @@ enum ChromecastError: Error, LocalizedError {
                 return
             }
 
-            // If already have a session, return it
+            // Always present the Cast dialog (shows device list or connected device)
+            GCKCastContext.sharedInstance().presentCastDialog()
+
+            // If already connected, resolve immediately — user can still interact with the dialog
             if let session = self.currentSession, session.connectionState == .connected {
                 completion(.success(self.createSessionObject(session, status: "connected")))
                 return
@@ -128,9 +131,6 @@ enum ChromecastError: Error, LocalizedError {
 
             // Store completion handler for session callback
             self.pendingSessionCompletion = completion
-
-            // Present the device chooser dialog
-            GCKCastContext.sharedInstance().presentCastDialog()
         }
     }
 

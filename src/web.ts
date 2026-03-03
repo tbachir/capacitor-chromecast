@@ -254,22 +254,30 @@ export class ChromecastWeb
       window.__onGCastApiAvailable = (isAvailable: boolean) => {
         clearTimeout(timeout);
         if (isAvailable) {
+          let settled = false;
+
           // Wait for framework to be fully ready
           const checkInterval = setInterval(() => {
             if (window.cast?.framework && window.chrome?.cast) {
               clearInterval(checkInterval);
-              this.setupCastContext(options);
-              resolve();
+              if (!settled) {
+                settled = true;
+                this.setupCastContext(options);
+                resolve();
+              }
             }
           }, 100);
 
           setTimeout(() => {
             clearInterval(checkInterval);
-            if (window.cast?.framework) {
-              this.setupCastContext(options);
-              resolve();
-            } else {
-              reject(new Error('Cast framework not available'));
+            if (!settled) {
+              if (window.cast?.framework && window.chrome?.cast) {
+                settled = true;
+                this.setupCastContext(options);
+                resolve();
+              } else {
+                reject(new Error('Cast framework not available'));
+              }
             }
           }, 5000);
         } else {

@@ -16,7 +16,7 @@ const messageInput = document.querySelector('#messageInput');
 const mimeitSequenceBtn = document.querySelector('#mimeitSequenceBtn');
 
 const MIMEIT_DEMO = Object.freeze({
-  receiverUrl: 'https://cast.mimeit.com',
+  receiverUrl: 'https://cast.mime-it.com',
   namespace: 'urn:x-cast:com.mimeit.state',
 });
 

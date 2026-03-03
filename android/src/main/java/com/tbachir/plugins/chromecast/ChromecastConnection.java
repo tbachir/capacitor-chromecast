@@ -392,29 +392,18 @@ public class ChromecastConnection {
                         );
                         builder.show();
                     } else {
-                        // We are are already connected, so show the "connection options" Dialog
-                        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-                        if (session.getCastDevice() != null) {
-                            builder.setTitle(session.getCastDevice().getFriendlyName());
-                        }
-                        builder.setOnDismissListener(
-                            new DialogInterface.OnDismissListener() {
-                                @Override
-                                public void onDismiss(DialogInterface dialog) {
-                                    callback.onCancel();
-                                }
-                            }
+                        // Already connected: resolve with current session and show the device list
+                        // so the user can see the connected device and switch to another if desired
+                        callback.onJoin(ChromecastUtilities.createSessionObject(session));
+                        MediaRouteChooserDialog chooserDialog = new MediaRouteChooserDialog(
+                            activity,
+                            androidx.appcompat.R.style.Theme_AppCompat_NoActionBar
                         );
-                        builder.setPositiveButton(
-                            "Stop Casting",
-                            new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    endSession(true, null);
-                                }
-                            }
+                        chooserDialog.setRouteSelector(
+                            new MediaRouteSelector.Builder().addControlCategory(CastMediaControlIntent.categoryForCast(appId)).build()
                         );
-                        builder.show();
+                        chooserDialog.setCanceledOnTouchOutside(true);
+                        chooserDialog.show();
                     }
                 }
             }
