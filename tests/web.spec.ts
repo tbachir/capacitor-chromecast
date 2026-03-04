@@ -173,6 +173,23 @@ describe('ChromecastWeb initialize', () => {
     ).toBeNull();
   });
 
+  it('allows desktop Chrome iPhone emulation (spoofed iOS platform)', async () => {
+    vi.spyOn(window.navigator, 'userAgent', 'get').mockReturnValue(
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/124.0.0.0 Mobile/15E148 Safari/604.1',
+    );
+    vi.spyOn(window.navigator, 'platform', 'get').mockReturnValue('iPhone');
+    ((window as unknown) as { chrome: { runtime: object } }).chrome = {
+      runtime: {},
+    };
+
+    const plugin = new ChromecastWeb();
+    const initPromise = plugin.initialize();
+
+    window.__onGCastApiAvailable?.(false);
+
+    await expect(initPromise).rejects.toThrow('Cast API not available');
+  });
+
   it('rejects iPad on iOS 13+ identified by MacIntel platform and touch points', async () => {
     vi.spyOn(window.navigator, 'userAgent', 'get').mockReturnValue(
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
@@ -200,7 +217,9 @@ describe('ChromecastWeb initialize', () => {
       value: 5,
       configurable: true,
     });
-    ((window as unknown) as { chrome: object }).chrome = {};
+    ((window as unknown) as { chrome: { runtime: object } }).chrome = {
+      runtime: {},
+    };
 
     const plugin = new ChromecastWeb();
     const initPromise = plugin.initialize();
@@ -221,7 +240,9 @@ describe('ChromecastWeb initialize', () => {
       value: 0,
       configurable: true,
     });
-    ((window as unknown) as { chrome: object }).chrome = {};
+    ((window as unknown) as { chrome: { runtime: object } }).chrome = {
+      runtime: {},
+    };
 
     const plugin = new ChromecastWeb();
     const initPromise = plugin.initialize();

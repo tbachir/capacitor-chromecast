@@ -236,11 +236,14 @@ class ChromecastWeb extends core.WebPlugin {
         return host === 'localhost' || host === '127.0.0.1' || host === '::1';
     }
     isUnsupportedIosWebSenderEnvironment() {
+        var _a;
         const userAgent = navigator.userAgent || '';
         const platform = navigator.platform || '';
         const maxTouchPoints = navigator.maxTouchPoints || 0;
-        // Direct iOS user agent match — reliable for real iOS devices
-        if (/iPad|iPhone|iPod/i.test(userAgent)) {
+        const hasDesktopChromeRuntime = Boolean((_a = window.chrome) === null || _a === void 0 ? void 0 : _a.runtime);
+        // Real iOS / iPadOS devices expose iPhone/iPad/iPod in navigator.platform.
+        // Desktop emulation can spoof this, but still has chrome.runtime.
+        if (/iPad|iPhone|iPod/i.test(platform) && !hasDesktopChromeRuntime) {
             return true;
         }
         // iPad on iOS 13+ reports "MacIntel" as platform and has touch points,
@@ -249,7 +252,8 @@ class ChromecastWeb extends core.WebPlugin {
         // Exclude Chrome-based environments (desktop Chrome, Electron, Chrome DevTools
         // emulation) to avoid false positives during ionic serve development.
         const isChrome = !!window.chrome;
-        const isAppleWebKit = /Safari/i.test(userAgent) && !/Chrome|Chromium|CriOS/i.test(userAgent);
+        const isAppleWebKit = /Safari/i.test(userAgent) &&
+            !/Chrome|Chromium|CriOS|Edg|OPR|FxiOS/i.test(userAgent);
         if (/Mac/i.test(platform) &&
             maxTouchPoints > 1 &&
             !isChrome &&

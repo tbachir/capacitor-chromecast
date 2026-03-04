@@ -405,8 +405,11 @@ export class ChromecastWeb
     const platform = navigator.platform || '';
     const maxTouchPoints = navigator.maxTouchPoints || 0;
 
-    // Direct iOS user agent match — reliable for real iOS devices
-    if (/iPad|iPhone|iPod/i.test(userAgent)) {
+    const hasDesktopChromeRuntime = Boolean((window as any).chrome?.runtime);
+
+    // Real iOS / iPadOS devices expose iPhone/iPad/iPod in navigator.platform.
+    // Desktop emulation can spoof this, but still has chrome.runtime.
+    if (/iPad|iPhone|iPod/i.test(platform) && !hasDesktopChromeRuntime) {
       return true;
     }
 
@@ -417,7 +420,8 @@ export class ChromecastWeb
     // emulation) to avoid false positives during ionic serve development.
     const isChrome = !!(window as any).chrome;
     const isAppleWebKit =
-      /Safari/i.test(userAgent) && !/Chrome|Chromium|CriOS/i.test(userAgent);
+      /Safari/i.test(userAgent) &&
+      !/Chrome|Chromium|CriOS|Edg|OPR|FxiOS/i.test(userAgent);
     if (
       /Mac/i.test(platform) &&
       maxTouchPoints > 1 &&
